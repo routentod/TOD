@@ -4,7 +4,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // La clé "anon" est publique par nature (elle est faite pour être exposée
 // côté client) : la vraie sécurité vient de la RLS + de la fonction
 // verify_admin_login définie côté base de données.
-const SUPABASE_URL = "https://zbuiikdvnylrynotvwyp.supabase.co";
+const SUPABASE_URL = "https://bltqkxlczirsfharoeam.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJsdHFreGxjemlyc2ZoYXJvZWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MDU1MTIsImV4cCI6MjEwMTQ4MTUxMn0.qszR74W-3jKofWSq_3tmOjI1gHytf8sTHbJRz31zoYI";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
