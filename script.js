@@ -80,8 +80,11 @@ form.addEventListener("submit", async (event) => {
     sessionStorage.setItem("identifiant", identifiant);
     sessionStorage.setItem("role", resultat.role);
     submitLabel.textContent = "Connecté ✓";
-    // À adapter une fois les pages admin/visiteur créées, par ex. :
-    // window.location.href = resultat.role === "admin" ? "admin.html" : "visiteur.html";
+
+    if (resultat.role === "admin") {
+      window.location.href = "admin.html";
+    }
+    // Le côté visiteur (redirection + page dédiée) sera branché ensuite.
   } else {
     setError("Identifiant ou mot de passe incorrect.");
   }
