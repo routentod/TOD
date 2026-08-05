@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace administration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #171c3e;
+  --indigo: #4c5aa0;
+  --indigo-soft: #6672b3;
+  --ink: #f3f4fb;
+  --ink-dim: #c3c8e6;
+  --accent: #f2b544;
+  --accent-dim: #f2b54455;
+  --glass: rgba(20, 24, 56, 0.42);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --danger: #ff8585;
+
+  --font-display: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+
+  /* Fond fourni : fixe, toujours en mode "paysage" (cover + centré),
+     ne défile pas et ne se répète jamais, quelle que soit la taille de l'écran. */
+  background-image:
+    linear-gradient(180deg, rgba(10, 13, 34, 0.35) 0%, rgba(10, 13, 34, 0.55) 100%),
+    url("assets/background.png");
+  background-color: var(--bg-deep);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+.scene {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+/* Halos animés qui font écho aux orbes du fond */
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  opacity: 0.55;
+  animation: drift 12s ease-in-out infinite;
+}
+
+.glow--one {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, var(--accent-dim), transparent 70%);
+  top: 8%;
+  left: 6%;
+}
+
+.glow--two {
+  width: 460px;
+  height: 460px;
+  background: radial-gradient(circle, rgba(140, 155, 240, 0.35), transparent 70%);
+  bottom: 4%;
+  right: 6%;
+  animation-delay: -6s;
+}
+
+@keyframes drift {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-18px) scale(1.05); }
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 400px;
+  padding: 44px 38px 38px;
+  border-radius: 22px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 30px 60px -20px rgba(5, 7, 25, 0.6);
+}
+
+.card__mark {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 22px;
+}
+
+.mark__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.6px solid var(--accent);
+  opacity: 0.9;
+}
+
+.mark__dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 14px 2px var(--accent-dim);
+}
+
+.card__eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.card__title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.card__subtitle {
+  margin: 0 0 30px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field__label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-dim);
+}
+
+.field input {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(10, 13, 34, 0.35);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field input::placeholder {
+  color: rgba(243, 244, 251, 0.35);
+}
+
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.field__password {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field__password input {
+  padding-right: 42px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+
+.password-toggle:hover {
+  color: var(--ink);
+}
+
+.error {
+  margin: -6px 0 0;
+  font-size: 13px;
+  color: var(--danger);
+  line-height: 1.4;
+}
+
+.submit {
+  margin-top: 6px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #221703;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.submit:hover {
+  filter: brightness(1.06);
+}
+
+.submit:active {
+  transform: translateY(1px);
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+@media (max-width: 460px) {
+  .card {
+    padding: 34px 26px 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow {
+    animation: none;
+  }
+}
+
+</style>
+</head>
+<body>
+
+  <div class="scene">
+    <div class="glow glow--one"></div>
+    <div class="glow glow--two"></div>
+
+    <main class="card" role="main">
+      <div class="card__mark">
+        <span class="mark__ring"></span>
+        <span class="mark__dot"></span>
+      </div>
+
+      <p class="card__eyebrow">Accès restreint</p>
+      <h1 class="card__title">Espace administration</h1>
+      <p class="card__subtitle">Connectez-vous avec vos identifiants administrateur.</p>
+
+      <form id="login-form" class="form" autocomplete="off" novalidate>
+        <label class="field">
+          <span class="field__label">Identifiant</span>
+          <input
+            type="text"
+            id="identifiant"
+            name="identifiant"
+            placeholder="admintod"
+            autocomplete="username"
+            required
+          >
+        </label>
+
+        <label class="field">
+          <span class="field__label">Mot de passe</span>
+          <div class="field__password">
+            <input
+              type="password"
+              id="mot-de-passe"
+              name="mot-de-passe"
+              placeholder="••••••••••••"
+              autocomplete="current-password"
+              required
+            >
+            <button type="button" id="toggle-password" class="password-toggle" aria-label="Afficher le mot de passe">
+              <svg id="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a19.8 19.8 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </label>
+
+        <p id="error-message" class="error" hidden></p>
+
+        <button type="submit" id="submit-btn" class="submit">
+          <span class="submit__label">Se connecter</span>
+        </button>
+      </form>
+    </main>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
