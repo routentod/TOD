@@ -267,7 +267,7 @@ const defiTitreInput = document.getElementById("defi-titre-input");
 const defiMontantInput = document.getElementById("defi-montant-input");
 const defiHeuresInput = document.getElementById("defi-heures-input");
 const defiMinutesInput = document.getElementById("defi-minutes-input");
-const joueursGrid = document.getElementById("joueurs-grid");
+const defiCategorieTags = document.getElementById("defi-categorie-tags");
 const defiFormMessage = document.getElementById("defi-form-message");
 const defiSubmitBtn = document.getElementById("defi-submit-btn");
 
@@ -277,52 +277,25 @@ function setDefiMessage(text, type) {
   defiFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
 }
 
-async function chargerJoueurs() {
-  joueursGrid.innerHTML = `<span style="font-size:12.5px;color:var(--ink-dim)">Chargement...</span>`;
+// Multi-sélection de catégories (tags qui basculent indépendamment, "Sans
+// catégorie" inclus pour pouvoir viser aussi les joueurs non catégorisés)
+async function chargerCategorieTagsDefi() {
+  defiCategorieTags.innerHTML = `<span style="font-size:12.5px;color:var(--ink-dim)">Chargement...</span>`;
 
-  const { data, error } = await supabase.rpc("get_comptes_visiteurs");
+  const categories = await chargerListeCategories();
+  const tous = [...categories, { id: "__sans__", nom: "Sans catégorie" }];
 
-  if (error) {
-    console.error(error);
-    joueursGrid.innerHTML = `<span style="font-size:12.5px;color:var(--danger)">Impossible de charger les joueurs.</span>`;
-    return;
-  }
+  defiCategorieTags.innerHTML = tous.map((c) => `
+    <button type="button" class="categorie-tag" data-id="${c.id}">${c.nom}</button>
+  `).join("");
 
-  if (!data || data.length === 0) {
-    joueursGrid.innerHTML = `<span style="font-size:12.5px;color:var(--ink-dim)">Aucun joueur pour l'instant</span>`;
-    return;
-  }
-
-  // Regroupe les joueurs par catégorie (les "sans catégorie" à la fin)
-  const groupes = new Map();
-  data.forEach((row) => {
-    const cle = row.categorie_nom || "__sans__";
-    if (!groupes.has(cle)) groupes.set(cle, []);
-    groupes.get(cle).push(row);
+  defiCategorieTags.querySelectorAll(".categorie-tag").forEach((tag) => {
+    tag.addEventListener("click", () => tag.classList.toggle("active"));
   });
+}
 
-  const cles = Array.from(groupes.keys()).sort((a, b) => {
-    if (a === "__sans__") return 1;
-    if (b === "__sans__") return -1;
-    return a.localeCompare(b);
-  });
-
-  joueursGrid.innerHTML = cles.map((cle) => {
-    const titre = cle === "__sans__" ? "Sans catégorie" : cle;
-    const items = groupes.get(cle).map((row) => `
-      <label class="joueur-check">
-        <input type="checkbox" name="joueur" value="${row.identifiant}">
-        <span>${row.identifiant}</span>
-      </label>
-    `).join("");
-
-    return `
-      <div class="joueurs-category">
-        <p class="joueurs-category__title">${titre}</p>
-        <div class="joueurs-category__items">${items}</div>
-      </div>
-    `;
-  }).join("");
+function getCategoriesSelectionneesDefi() {
+  return Array.from(defiCategorieTags.querySelectorAll(".categorie-tag.active")).map((t) => t.dataset.id);
 }
 
 // ---- Catégories : chargement partagé (liste + remplissage des <select>) ----
@@ -359,7 +332,7 @@ function getCategorieSelectionnee(containerEl) {
 function openDefiModal() {
   defiModal.classList.add("open");
   defiModalBackdrop.classList.add("open");
-  chargerJoueurs();
+  chargerCategorieTagsDefi();
 }
 
 function closeDefiModal() {
@@ -383,9 +356,7 @@ defiForm.addEventListener("submit", async (event) => {
   const minutes = parseInt(defiMinutesInput.value, 10) || 0;
   const dureeSecondes = heures * 3600 + minutes * 60;
 
-  const identifiantsChoisis = Array.from(
-    joueursGrid.querySelectorAll('input[name="joueur"]:checked')
-  ).map((input) => input.value);
+  const categorieIdsChoisis = getCategoriesSelectionneesDefi();
 
   if (!titre || isNaN(montant)) {
     setDefiMessage("Merci de renseigner un titre et un montant.", "error");
@@ -397,8 +368,27 @@ defiForm.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (categorieIdsChoisis.length === 0) {
+    setDefiMessage("Coche au moins une catégorie concernée.", "error");
+    return;
+  }
+
+  // Résout les catégories choisies en identifiants de joueurs (le "défi" est
+  // toujours stocké par joueur côté base ; seule la façon de les choisir a
+  // changé côté admin).
+  const { data: comptes, error: comptesError } = await supabase.rpc("get_comptes_visiteurs");
+  if (comptesError) {
+    console.error(comptesError);
+    setDefiMessage("Impossible de charger les joueurs de ces catégories.", "error");
+    return;
+  }
+
+  const identifiantsChoisis = (comptes || [])
+    .filter((c) => categorieIdsChoisis.includes(c.categorie_id || "__sans__"))
+    .map((c) => c.identifiant);
+
   if (identifiantsChoisis.length === 0) {
-    setDefiMessage("Coche au moins un joueur concerné.", "error");
+    setDefiMessage("Aucun joueur dans la ou les catégories sélectionnées.", "error");
     return;
   }
 
@@ -617,7 +607,7 @@ editJoueurForm.addEventListener("submit", async (event) => {
   }
 
   setEditJoueurMessage("Compte mis à jour !", "success");
-  chargerJoueurs();
+  chargerComptesParCategorie();
   setTimeout(closeEditJoueurModal, 900);
 });
 
