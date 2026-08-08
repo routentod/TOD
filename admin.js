@@ -352,9 +352,24 @@ const editVisiteurModal = document.getElementById("edit-visiteur-modal");
 const editVisiteurModalBackdrop = document.getElementById("edit-visiteur-modal-backdrop");
 const editVisiteurForm = document.getElementById("edit-visiteur-form");
 const evIdentifiantInput = document.getElementById("ev-identifiant-input");
+const evIdentifiantDisplay = document.getElementById("ev-identifiant-display");
+const evAvatar = document.getElementById("ev-avatar");
 const evMotdepasseInput = document.getElementById("ev-motdepasse-input");
 const editVisiteurFormMessage = document.getElementById("edit-visiteur-form-message");
 const editVisiteurSubmitBtn = document.getElementById("edit-visiteur-submit-btn");
+
+// Afficher / masquer le mot de passe (modale "Modifier le compte")
+const evTogglePassword = document.getElementById("ev-toggle-password");
+const evEyeOpen = document.getElementById("ev-eye-open");
+const evEyeClosed = document.getElementById("ev-eye-closed");
+
+evTogglePassword.addEventListener("click", () => {
+  const isPassword = evMotdepasseInput.type === "password";
+  evMotdepasseInput.type = isPassword ? "text" : "password";
+  evEyeOpen.style.display = isPassword ? "none" : "block";
+  evEyeClosed.style.display = isPassword ? "block" : "none";
+  evTogglePassword.setAttribute("aria-label", isPassword ? "Masquer le mot de passe" : "Afficher le mot de passe");
+});
 
 function setEditVisiteurMessage(text, type) {
   editVisiteurFormMessage.hidden = !text;
@@ -365,7 +380,12 @@ function setEditVisiteurMessage(text, type) {
 function openEditVisiteurModal(identifiant) {
   setEditVisiteurMessage(null);
   editVisiteurForm.reset();
+  evMotdepasseInput.type = "password";
+  evEyeOpen.style.display = "block";
+  evEyeClosed.style.display = "none";
   evIdentifiantInput.value = identifiant;
+  evIdentifiantDisplay.textContent = identifiant;
+  evAvatar.textContent = identifiant.slice(0, 2);
   editVisiteurModal.classList.add("open");
   editVisiteurModalBackdrop.classList.add("open");
 }
