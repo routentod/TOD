@@ -201,48 +201,96 @@ body {
   color: var(--ink-dim);
 }
 
-/* ---- Timeline ---- */
+/* ---- Timeline des défis ---- */
 .timeline {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 6px 0 0;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 10px;
+  flex: 1;
+  max-height: 520px;
+  overflow-y: auto;
 }
 
-.timeline-item {
-  position: relative;
-  padding: 0 0 20px 22px;
-  border-left: 1.5px solid var(--glass-border);
+.timeline::-webkit-scrollbar { width: 6px; }
+.timeline::-webkit-scrollbar-track { background: transparent; }
+.timeline::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 999px;
+}
+.timeline::-webkit-scrollbar-thumb:hover { background: var(--metal-3); }
+.timeline {
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border) transparent;
 }
 
-.timeline-item:last-child {
-  border-left-color: transparent;
-  padding-bottom: 0;
+.defi-item {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
 }
 
-.timeline-item::before {
-  content: "";
-  position: absolute;
-  left: -5.5px;
-  top: 2px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--metal-2);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+.defi-item__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.timeline-item__time {
-  font-size: 11.5px;
-  color: var(--ink-dim);
-  margin-bottom: 3px;
-}
-
-.timeline-item__text {
+.defi-item__titre {
   font-size: 13.5px;
-  font-weight: 500;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.defi-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.defi-item__montant {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--metal-2);
+}
+
+.defi-item__timer {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+}
+
+.defi-item__timer--attente { color: var(--ink-dim); font-weight: 600; }
+.defi-item__timer--termine { color: var(--danger); border-color: rgba(255, 144, 144, 0.35); }
+
+.defi-item__visiteurs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.visiteur-tag {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--glass-border);
+  color: var(--ink-dim);
 }
 
 /* ---- Derniers comptes créés ---- */
@@ -647,7 +695,7 @@ body {
       <!-- 2. Timeline (2/5) -->
       <section class="panel">
         <h2 class="panel__title">Timeline des actions</h2>
-        <p class="panel__hint">Activité récente sur le site</p>
+        <p class="panel__hint">Tous les défis créés, du plus récent au plus ancien</p>
         <ul class="timeline" id="timeline-list">
           <!-- Rempli dynamiquement par admin.js -->
         </ul>
