@@ -68,27 +68,78 @@ async function chargerClassement() {
   `).join("");
 }
 
-async function chargerTimeline() {
+async function chargerDefis() {
   const list = document.getElementById("timeline-list");
-  const { data, error } = await supabase.rpc("get_timeline", { p_limit: 10 });
+  const { data, error } = await supabase.rpc("get_tous_defis");
 
   if (error) {
     console.error(error);
+    list.innerHTML = `<li class="defi-item"><span class="defi-item__titre">Impossible de charger les défis.</span></li>`;
     return;
   }
 
   if (!data || data.length === 0) {
-    list.innerHTML = `<li class="timeline-item"><div class="timeline-item__text">Aucune action pour l'instant</div></li>`;
+    list.innerHTML = `<li class="defi-item"><span class="defi-item__titre">Aucun défi pour l'instant</span></li>`;
     return;
   }
 
-  list.innerHTML = data.map((row) => `
-    <li class="timeline-item">
-      <div class="timeline-item__time">${formatDate(row.created_at)}</div>
-      <div class="timeline-item__text">${row.identifiant} — ${row.titre_contenu}</div>
+  list.innerHTML = data.map((defi) => {
+    const identifiants = defi.identifiants || [];
+    const tags = identifiants.length
+      ? identifiants.map((id) => `<span class="visiteur-tag">${id}</span>`).join("")
+      : `<span class="visiteur-tag">Aucun visiteur</span>`;
+
+    return `
+    <li class="defi-item" data-id="${defi.id}" data-lance-le="${defi.lance_le || ""}" data-duree="${defi.duree_secondes}">
+      <div class="defi-item__top">
+        <span class="defi-item__titre">${defi.titre}</span>
+        <button type="button" class="account-action-btn account-action-btn--danger" data-action="delete-defi" title="Supprimer le défi">${ICON_TRASH}</button>
+      </div>
+      <div class="defi-item__meta">
+        <span class="defi-item__montant">${defi.montant}$</span>
+        <span class="defi-item__timer">--:--:--</span>
+      </div>
+      <div class="defi-item__visiteurs">${tags}</div>
     </li>
-  `).join("");
+  `;
+  }).join("");
+
+  mettreAJourTimersDefis();
 }
+
+function mettreAJourTimersDefis() {
+  document.querySelectorAll(".defi-item").forEach((item) => {
+    const timerEl = item.querySelector(".defi-item__timer");
+    if (!timerEl) return;
+
+    const lanceLe = item.dataset.lanceLe;
+    const duree = parseInt(item.dataset.duree, 10) || 0;
+
+    if (!lanceLe) {
+      timerEl.textContent = "En attente";
+      timerEl.className = "defi-item__timer defi-item__timer--attente";
+      return;
+    }
+
+    const debut = new Date(lanceLe).getTime();
+    const fin = debut + duree * 1000;
+    const restant = Math.round((fin - Date.now()) / 1000);
+
+    if (restant <= 0) {
+      timerEl.textContent = "Terminé";
+      timerEl.className = "defi-item__timer defi-item__timer--termine";
+      return;
+    }
+
+    const h = String(Math.floor(restant / 3600)).padStart(2, "0");
+    const m = String(Math.floor((restant % 3600) / 60)).padStart(2, "0");
+    const s = String(Math.floor(restant % 60)).padStart(2, "0");
+    timerEl.textContent = `${h}:${m}:${s}`;
+    timerEl.className = "defi-item__timer";
+  });
+}
+
+setInterval(mettreAJourTimersDefis, 1000);
 
 const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
 const ICON_TRASH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>`;
@@ -122,7 +173,7 @@ async function chargerDerniersComptes() {
 }
 
 chargerClassement();
-chargerTimeline();
+chargerDefis();
 chargerDerniersComptes();
 
 // ---- Actions sur un compte (modifier / supprimer) ----
@@ -159,6 +210,29 @@ async function supprimerVisiteur(identifiant) {
 
   chargerDerniersComptes();
 }
+
+// ---- Suppression d'un défi ----
+document.getElementById("timeline-list").addEventListener("click", async (event) => {
+  const btn = event.target.closest('[data-action="delete-defi"]');
+  if (!btn) return;
+
+  const item = btn.closest(".defi-item");
+  const id = item?.dataset.id;
+  if (!id) return;
+
+  const confirme = confirm("Supprimer ce défi ? Cette action est irréversible.");
+  if (!confirme) return;
+
+  const { error } = await supabase.rpc("supprimer_defi", { p_id: id });
+
+  if (error) {
+    console.error(error);
+    alert("Impossible de supprimer ce défi pour l'instant.");
+    return;
+  }
+
+  chargerDefis();
+});
 
 // ---- Modale "Nouveau défi" ----
 const newDefiBtn = document.getElementById("new-defi-btn");
@@ -270,7 +344,7 @@ defiForm.addEventListener("submit", async (event) => {
 
   setDefiMessage("Défi créé !", "success");
   defiForm.reset();
-  chargerTimeline();
+  chargerDefis();
 
   setTimeout(closeDefiModal, 900);
 });
