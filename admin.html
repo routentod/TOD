@@ -277,13 +277,13 @@ body {
 .defi-item__timer--attente { color: var(--ink-dim); font-weight: 600; }
 .defi-item__timer--termine { color: var(--danger); border-color: rgba(255, 144, 144, 0.35); }
 
-.defi-item__visiteurs {
+.defi-item__joueurs {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.visiteur-tag {
+.joueur-tag {
   font-size: 11.5px;
   font-weight: 600;
   padding: 4px 10px;
@@ -293,7 +293,47 @@ body {
   color: var(--ink-dim);
 }
 
-/* ---- Derniers comptes créés ---- */
+/* ---- Comptes par catégorie ---- */
+.compte-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 8px 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--glass-border);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.compte-tag:hover {
+  background: var(--glass-bg-strong);
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.compte-tag__del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  color: var(--ink-dim);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.compte-tag__del:hover {
+  background: rgba(255, 144, 144, 0.18);
+  color: var(--danger);
+}
+
+.compte-tag__del svg { width: 10px; height: 10px; display: block; }
+
+/* ---- (styles hérités "account-item", encore utilisés par la modale Catégories) ---- */
 .account-list {
   list-style: none;
   margin: 0;
@@ -464,13 +504,13 @@ body {
 }
 
 #defi-form,
-#visiteur-form {
+#joueur-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-#edit-visiteur-form,
+#edit-joueur-form,
 #categorie-form {
   display: flex;
   flex-direction: column;
@@ -519,7 +559,7 @@ body {
 .field-row { display: flex; gap: 12px; }
 .field-row .field { flex: 1; }
 
-.visiteurs-grid {
+.joueurs-grid {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -528,7 +568,7 @@ body {
   padding-right: 4px;
 }
 
-.visiteurs-category__title {
+.joueurs-category__title {
   margin: 0 0 8px;
   font-size: 11px;
   font-weight: 700;
@@ -537,7 +577,7 @@ body {
   color: var(--ink-dim);
 }
 
-.visiteurs-category__items {
+.joueurs-category__items {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
@@ -577,7 +617,7 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-.visiteur-check {
+.joueur-check {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -591,21 +631,21 @@ body {
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
 }
 
-.visiteur-check:hover {
+.joueur-check:hover {
   background: var(--glass-bg);
   border-color: rgba(255, 255, 255, 0.26);
 }
 
-.visiteur-check:active { transform: translateY(1px); }
+.joueur-check:active { transform: translateY(1px); }
 
-.visiteur-check:has(input:checked) {
+.joueur-check:has(input:checked) {
   border-color: rgba(255, 255, 255, 0.55);
   background: rgba(255, 255, 255, 0.14);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 6px 16px -8px rgba(0, 0, 0, 0.5);
   font-weight: 600;
 }
 
-.visiteur-check input {
+.joueur-check input {
   appearance: none;
   -webkit-appearance: none;
   margin: 0;
@@ -620,18 +660,18 @@ body {
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
 }
 
-.visiteur-check input:hover {
+.joueur-check input:hover {
   border-color: var(--metal-2);
 }
 
-.visiteur-check input:checked {
+.joueur-check input:checked {
   background: linear-gradient(180deg, var(--metal-1) 0%, var(--metal-2) 45%, var(--metal-3) 100%);
   border-color: var(--metal-1);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 0 3px rgba(255, 255, 255, 0.12);
   transform: scale(1.04);
 }
 
-.visiteur-check input:checked::after {
+.joueur-check input:checked::after {
   content: "";
   position: absolute;
   left: 6px;
@@ -743,7 +783,7 @@ body {
       </div>
       <div class="topbar__right">
         <div id="clock" class="clock">--:--</div>
-        <button id="new-visiteur-btn" class="new-defi-btn" type="button">+ Nouveau visiteur</button>
+        <button id="new-joueur-btn" class="new-defi-btn" type="button">+ Nouveau joueur</button>
         <button id="categories-btn" class="new-defi-btn" type="button">Catégories</button>
         <button id="new-defi-btn" class="new-defi-btn" type="button">+ Nouveau défi</button>
         <button id="logout-btn" class="logout-btn" type="button">Déconnexion</button>
@@ -770,10 +810,11 @@ body {
         </ul>
       </section>
 
-      <!-- 3. Derniers comptes créés (1.5/5) -->
+      <!-- 3. Comptes par catégorie (1.5/5) -->
       <section class="panel">
-        <h2 class="panel__title">Derniers comptes créés</h2>
-        <ul class="account-list" id="account-list">
+        <h2 class="panel__title">Comptes par catégorie</h2>
+        <p class="panel__hint">Joueurs regroupés par catégorie</p>
+        <ul class="timeline" id="account-list">
           <!-- Rempli dynamiquement par admin.js -->
         </ul>
       </section>
@@ -810,8 +851,8 @@ body {
       </div>
 
       <div class="field">
-        <span class="field__label">Visiteurs concernés</span>
-        <div class="visiteurs-grid" id="visiteurs-grid">
+        <span class="field__label">Joueurs concernés</span>
+        <div class="joueurs-grid" id="joueurs-grid">
           <!-- Rempli dynamiquement par admin.js -->
         </div>
       </div>
@@ -822,16 +863,16 @@ body {
     </form>
   </div>
 
-  <!-- Modale "Nouveau visiteur" -->
-  <div class="modal-backdrop" id="visiteur-modal-backdrop"></div>
+  <!-- Modale "Nouveau joueur" -->
+  <div class="modal-backdrop" id="joueur-modal-backdrop"></div>
 
-  <div class="modal-panel" id="visiteur-modal">
-    <h2 class="modal-panel__title">Nouveau compte visiteur</h2>
+  <div class="modal-panel" id="joueur-modal">
+    <h2 class="modal-panel__title">Nouveau compte joueur</h2>
 
-    <form id="visiteur-form">
+    <form id="joueur-form">
       <div class="field">
         <span class="field__label">Identifiant</span>
-        <input type="text" id="nv-identifiant-input" placeholder="visiteur03" autocomplete="off" required>
+        <input type="text" id="nv-identifiant-input" placeholder="joueur03" autocomplete="off" required>
       </div>
 
       <div class="field">
@@ -849,20 +890,20 @@ body {
         <div class="categorie-tags" id="nv-categorie-tags"></div>
       </div>
 
-      <p id="visiteur-form-message" class="modal-message" hidden></p>
+      <p id="joueur-form-message" class="modal-message" hidden></p>
 
-      <button type="submit" class="modal-submit-btn" id="visiteur-submit-btn">Créer le compte</button>
+      <button type="submit" class="modal-submit-btn" id="joueur-submit-btn">Créer le compte</button>
     </form>
   </div>
 
-  <!-- Modale "Modifier le compte visiteur" -->
-  <div class="modal-backdrop" id="edit-visiteur-modal-backdrop"></div>
+  <!-- Modale "Modifier le compte joueur" -->
+  <div class="modal-backdrop" id="edit-joueur-modal-backdrop"></div>
 
-  <div class="modal-panel" id="edit-visiteur-modal">
+  <div class="modal-panel" id="edit-joueur-modal">
     <h2 class="modal-panel__title">Modifier le compte</h2>
-    <p class="modal-panel__subtitle">Change la catégorie et/ou le mot de passe de ce visiteur. L'identifiant ne peut pas être changé.</p>
+    <p class="modal-panel__subtitle">Change la catégorie et/ou le mot de passe de ce joueur. L'identifiant ne peut pas être changé.</p>
 
-    <form id="edit-visiteur-form">
+    <form id="edit-joueur-form">
       <div class="field">
         <span class="field__label">Identifiant</span>
         <div class="field-display">
@@ -888,9 +929,9 @@ body {
         </div>
       </div>
 
-      <p id="edit-visiteur-form-message" class="modal-message" hidden></p>
+      <p id="edit-joueur-form-message" class="modal-message" hidden></p>
 
-      <button type="submit" class="modal-submit-btn" id="edit-visiteur-submit-btn">Enregistrer</button>
+      <button type="submit" class="modal-submit-btn" id="edit-joueur-submit-btn">Enregistrer</button>
     </form>
   </div>
 
