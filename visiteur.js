@@ -187,7 +187,7 @@ function initMap() {
 
 // ---- Chargement du défi actuel ----
 async function chargerDefi() {
-  const { data, error } = await supabase.rpc("get_defi_actuel", { p_identifiant: identifiant });
+  const { data, error } = await supabase.rpc("get_defi_actuel");
 
   if (error || !data || data.length === 0) {
     defiTitreEl.textContent = "Aucun défi pour l'instant";
