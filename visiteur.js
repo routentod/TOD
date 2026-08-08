@@ -188,9 +188,16 @@ function initMap() {
 
 function afficherPreuveDejaEnvoyee() {
   toggleProofBtn.style.display = "none";
-  proofDoneEl.hidden = false;
   proofDoneEl.style.display = "flex";
 }
+
+function afficherBoutonPreuve() {
+  toggleProofBtn.style.display = "";
+  proofDoneEl.style.display = "none";
+}
+
+// État de départ déterministe (indépendant de l'attribut "hidden" du HTML)
+afficherBoutonPreuve();
 
 // ---- Chargement du défi actuel ----
 async function chargerDefi() {
@@ -212,11 +219,20 @@ async function chargerDefi() {
 
   demarrerTimer();
 
-  const { data: dejaEnvoye } = await supabase.rpc("a_envoye_preuve", {
+  const { data: dejaEnvoye, error: dejaEnvoyeError } = await supabase.rpc("a_envoye_preuve", {
     p_identifiant: identifiant,
   });
-  if (dejaEnvoye) {
+
+  if (dejaEnvoyeError) {
+    console.error("Erreur a_envoye_preuve :", dejaEnvoyeError);
+    afficherBoutonPreuve();
+    return;
+  }
+
+  if (dejaEnvoye === true) {
     afficherPreuveDejaEnvoyee();
+  } else {
+    afficherBoutonPreuve();
   }
 }
 
