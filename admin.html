@@ -458,6 +458,7 @@ body {
       </div>
       <div class="topbar__right">
         <div id="clock" class="clock">--:--</div>
+        <button id="new-visiteur-btn" class="new-defi-btn" type="button">+ Nouveau visiteur</button>
         <button id="new-defi-btn" class="new-defi-btn" type="button">+ Nouveau défi</button>
         <button id="logout-btn" class="logout-btn" type="button">Déconnexion</button>
       </div>
@@ -533,6 +534,29 @@ body {
       <p id="defi-form-message" class="modal-message" hidden></p>
 
       <button type="submit" class="modal-submit-btn" id="defi-submit-btn">Créer le défi</button>
+    </form>
+  </div>
+
+  <!-- Modale "Nouveau visiteur" -->
+  <div class="modal-backdrop" id="visiteur-modal-backdrop"></div>
+
+  <div class="modal-panel" id="visiteur-modal">
+    <h2 class="modal-panel__title">Nouveau compte visiteur</h2>
+
+    <form id="visiteur-form">
+      <div class="field">
+        <span class="field__label">Identifiant</span>
+        <input type="text" id="nv-identifiant-input" placeholder="visiteur03" autocomplete="off" required>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Mot de passe</span>
+        <input type="password" id="nv-motdepasse-input" placeholder="mot de passe" autocomplete="new-password" minlength="6" required>
+      </div>
+
+      <p id="visiteur-form-message" class="modal-message" hidden></p>
+
+      <button type="submit" class="modal-submit-btn" id="visiteur-submit-btn">Créer le compte</button>
     </form>
   </div>
 
