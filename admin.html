@@ -362,7 +362,8 @@ body {
   font-size: 17px;
 }
 
-#defi-form {
+#defi-form,
+#visiteur-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -547,6 +548,11 @@ body {
       <div class="field">
         <span class="field__label">Identifiant</span>
         <input type="text" id="nv-identifiant-input" placeholder="visiteur03" autocomplete="off" required>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Identité (visible admin uniquement)</span>
+        <input type="text" id="nv-identite-input" placeholder="Nom / prénom réel" autocomplete="off">
       </div>
 
       <div class="field">
