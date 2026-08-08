@@ -356,6 +356,13 @@ body {
   color: var(--ink-dim);
 }
 
+.account-item__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .account-item__actions {
   display: flex;
   align-items: center;
@@ -463,7 +470,8 @@ body {
   gap: 16px;
 }
 
-#edit-visiteur-form {
+#edit-visiteur-form,
+#categorie-form {
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -483,7 +491,14 @@ body {
   text-transform: uppercase;
 }
 
-.field input {
+.field__hint {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--ink-dim);
+}
+
+.field input,
+.field select {
   width: 100%;
   padding: 12px 14px;
   border-radius: 12px;
@@ -495,18 +510,37 @@ body {
   outline: none;
 }
 
-.field input:focus { border-color: var(--metal-2); }
+.field select { cursor: pointer; }
+.field select option { background: #1a2050; color: var(--ink); }
+
+.field input:focus,
+.field select:focus { border-color: var(--metal-2); }
 
 .field-row { display: flex; gap: 12px; }
 .field-row .field { flex: 1; }
 
 .visiteurs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.visiteurs-category__title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.visiteurs-category__items {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 4px;
 }
 
 .visiteur-check {
