@@ -12,6 +12,13 @@ if (role !== "visiteur") {
   window.location.href = "index.html";
 }
 
+// ---- Déconnexion ----
+document.getElementById("logout-btn").addEventListener("click", () => {
+  sessionStorage.removeItem("identifiant");
+  sessionStorage.removeItem("role");
+  window.location.href = "index.html";
+});
+
 // ---- Éléments du DOM ----
 const defiTitreEl = document.getElementById("defi-titre");
 const defiMontantEl = document.getElementById("defi-montant");
