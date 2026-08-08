@@ -18,6 +18,7 @@
   --glass-bg: rgba(255, 255, 255, 0.07);
   --glass-bg-strong: rgba(255, 255, 255, 0.1);
   --glass-border: rgba(255, 255, 255, 0.16);
+  --danger: #ff9090;
   --font-display: "Manrope", "Segoe UI", sans-serif;
   --font-body: "Inter", "Segoe UI", sans-serif;
 }
@@ -247,27 +248,59 @@ body {
 /* ---- Derniers comptes créés ---- */
 .account-list {
   list-style: none;
-  margin: 0 0 16px;
-  padding: 0;
+  margin: 0;
+  padding: 0 6px 0 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
   flex: 1;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+/* Scrollbar fine, dans le thème, sans flèches */
+.account-list::-webkit-scrollbar {
+  width: 6px;
+}
+.account-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.account-list::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 999px;
+}
+.account-list::-webkit-scrollbar-thumb:hover {
+  background: var(--metal-3);
+}
+.account-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border) transparent;
 }
 
 .account-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   padding: 10px 12px;
   border-radius: 12px;
   background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border);
 }
 
+.account-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .account-item__name {
   font-size: 13.5px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .account-item__date {
@@ -275,25 +308,38 @@ body {
   color: var(--ink-dim);
 }
 
-.see-more-btn {
-  align-self: center;
-  padding: 11px 28px;
-  border: none;
-  border-radius: 999px;
-  background: linear-gradient(180deg, var(--metal-1) 0%, var(--metal-2) 45%, var(--metal-3) 100%);
-  color: #1c2138;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 13.5px;
-  cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 10px 22px -10px rgba(0, 0, 0, 0.55);
-  transition: filter 0.15s ease, transform 0.1s ease;
+.account-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.see-more-btn:hover { filter: brightness(1.05); }
-.see-more-btn:active { transform: translateY(1px); }
+.account-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.account-action-btn:hover {
+  background: var(--glass-bg);
+  color: var(--ink);
+}
+
+.account-action-btn--danger:hover {
+  background: rgba(255, 144, 144, 0.14);
+  color: var(--danger);
+}
+
+.account-action-btn svg { width: 14px; height: 14px; }
 
 /* ---- Bouton "Nouveau défi" ---- */
 .new-defi-btn {
@@ -412,16 +458,58 @@ body {
 .visiteur-check {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   padding: 9px 10px;
   border-radius: 10px;
   background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border);
   font-size: 13px;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.visiteur-check input { margin: 0; accent-color: var(--metal-2); }
+.visiteur-check:hover { background: var(--glass-bg); }
+
+.visiteur-check:has(input:checked) {
+  border-color: var(--metal-2);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.visiteur-check input {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1.5px solid var(--glass-border);
+  background: rgba(6, 9, 26, 0.4);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.visiteur-check input:hover {
+  border-color: var(--metal-3);
+}
+
+.visiteur-check input:checked {
+  background: linear-gradient(180deg, var(--metal-1) 0%, var(--metal-2) 45%, var(--metal-3) 100%);
+  border-color: var(--metal-2);
+}
+
+.visiteur-check input:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid #1c2138;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
 
 .modal-submit-btn {
   padding: 13px 16px;
@@ -491,7 +579,6 @@ body {
         <ul class="account-list" id="account-list">
           <!-- Rempli dynamiquement par admin.js -->
         </ul>
-        <button class="see-more-btn" id="see-more-btn" type="button">voir</button>
       </section>
 
     </div>
@@ -563,6 +650,29 @@ body {
       <p id="visiteur-form-message" class="modal-message" hidden></p>
 
       <button type="submit" class="modal-submit-btn" id="visiteur-submit-btn">Créer le compte</button>
+    </form>
+  </div>
+
+  <!-- Modale "Modifier le compte visiteur" -->
+  <div class="modal-backdrop" id="edit-visiteur-modal-backdrop"></div>
+
+  <div class="modal-panel" id="edit-visiteur-modal">
+    <h2 class="modal-panel__title">Modifier le compte</h2>
+
+    <form id="edit-visiteur-form">
+      <div class="field">
+        <span class="field__label">Identifiant</span>
+        <input type="text" id="ev-identifiant-input" readonly>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Nouveau mot de passe</span>
+        <input type="password" id="ev-motdepasse-input" placeholder="mot de passe" autocomplete="new-password" minlength="6" required>
+      </div>
+
+      <p id="edit-visiteur-form-message" class="modal-message" hidden></p>
+
+      <button type="submit" class="modal-submit-btn" id="edit-visiteur-submit-btn">Enregistrer</button>
     </form>
   </div>
 
