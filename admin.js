@@ -90,6 +90,9 @@ async function chargerTimeline() {
   `).join("");
 }
 
+const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
+const ICON_TRASH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>`;
+
 async function chargerDerniersComptes() {
   const list = document.getElementById("account-list");
   const { data, error } = await supabase.rpc("get_derniers_comptes", { p_limit: 5 });
@@ -105,9 +108,15 @@ async function chargerDerniersComptes() {
   }
 
   list.innerHTML = data.map((row) => `
-    <li class="account-item">
-      <span class="account-item__name">${row.identifiant}${row.identite ? ` <span style="color:var(--ink-dim);font-weight:400">(${row.identite})</span>` : ""}</span>
-      <span class="account-item__date">${formatDate(row.created_at)}</span>
+    <li class="account-item" data-identifiant="${row.identifiant}">
+      <div class="account-item__info">
+        <span class="account-item__name">${row.identifiant}${row.identite ? ` <span style="color:var(--ink-dim);font-weight:400">(${row.identite})</span>` : ""}</span>
+        <span class="account-item__date">${formatDate(row.created_at)}</span>
+      </div>
+      <div class="account-item__actions">
+        <button type="button" class="account-action-btn" data-action="edit" title="Modifier le mot de passe">${ICON_EDIT}</button>
+        <button type="button" class="account-action-btn account-action-btn--danger" data-action="delete" title="Supprimer le compte">${ICON_TRASH}</button>
+      </div>
     </li>
   `).join("");
 }
@@ -116,10 +125,36 @@ chargerClassement();
 chargerTimeline();
 chargerDerniersComptes();
 
-document.getElementById("see-more-btn").addEventListener("click", () => {
-  // À adapter quand la page "liste des comptes" sera créée :
-  // window.location.href = "comptes.html";
+// ---- Actions sur un compte (modifier / supprimer) ----
+document.getElementById("account-list").addEventListener("click", (event) => {
+  const btn = event.target.closest(".account-action-btn");
+  if (!btn) return;
+
+  const item = btn.closest(".account-item");
+  const identifiant = item?.dataset.identifiant;
+  if (!identifiant) return;
+
+  if (btn.dataset.action === "edit") {
+    openEditVisiteurModal(identifiant);
+  } else if (btn.dataset.action === "delete") {
+    supprimerVisiteur(identifiant);
+  }
 });
+
+async function supprimerVisiteur(identifiant) {
+  const confirme = confirm(`Supprimer le compte "${identifiant}" ? Cette action est irréversible.`);
+  if (!confirme) return;
+
+  const { error } = await supabase.rpc("supprimer_visiteur", { p_identifiant: identifiant });
+
+  if (error) {
+    console.error(error);
+    alert("Impossible de supprimer ce compte pour l'instant.");
+    return;
+  }
+
+  chargerDerniersComptes();
+}
 
 // ---- Modale "Nouveau défi" ----
 const newDefiBtn = document.getElementById("new-defi-btn");
@@ -310,4 +345,70 @@ visiteurForm.addEventListener("submit", async (event) => {
   chargerDerniersComptes();
 
   setTimeout(closeVisiteurModal, 900);
+});
+
+// ---- Modale "Modifier le compte visiteur" ----
+const editVisiteurModal = document.getElementById("edit-visiteur-modal");
+const editVisiteurModalBackdrop = document.getElementById("edit-visiteur-modal-backdrop");
+const editVisiteurForm = document.getElementById("edit-visiteur-form");
+const evIdentifiantInput = document.getElementById("ev-identifiant-input");
+const evMotdepasseInput = document.getElementById("ev-motdepasse-input");
+const editVisiteurFormMessage = document.getElementById("edit-visiteur-form-message");
+const editVisiteurSubmitBtn = document.getElementById("edit-visiteur-submit-btn");
+
+function setEditVisiteurMessage(text, type) {
+  editVisiteurFormMessage.hidden = !text;
+  editVisiteurFormMessage.textContent = text || "";
+  editVisiteurFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
+}
+
+function openEditVisiteurModal(identifiant) {
+  setEditVisiteurMessage(null);
+  editVisiteurForm.reset();
+  evIdentifiantInput.value = identifiant;
+  editVisiteurModal.classList.add("open");
+  editVisiteurModalBackdrop.classList.add("open");
+}
+
+function closeEditVisiteurModal() {
+  editVisiteurModal.classList.remove("open");
+  editVisiteurModalBackdrop.classList.remove("open");
+}
+
+editVisiteurModalBackdrop.addEventListener("click", closeEditVisiteurModal);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeEditVisiteurModal();
+});
+
+editVisiteurForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  setEditVisiteurMessage(null);
+
+  const identifiant = evIdentifiantInput.value;
+  const motDePasse = evMotdepasseInput.value;
+
+  if (motDePasse.length < 6) {
+    setEditVisiteurMessage("Le mot de passe doit faire au moins 6 caractères.", "error");
+    return;
+  }
+
+  editVisiteurSubmitBtn.disabled = true;
+  editVisiteurSubmitBtn.textContent = "Enregistrement...";
+
+  const { error } = await supabase.rpc("modifier_mot_de_passe_visiteur", {
+    p_identifiant: identifiant,
+    p_nouveau_mot_de_passe: motDePasse,
+  });
+
+  editVisiteurSubmitBtn.disabled = false;
+  editVisiteurSubmitBtn.textContent = "Enregistrer";
+
+  if (error) {
+    console.error(error);
+    setEditVisiteurMessage(error.message || "Une erreur est survenue. Merci de réessayer.", "error");
+    return;
+  }
+
+  setEditVisiteurMessage("Mot de passe mis à jour !", "success");
+  setTimeout(closeEditVisiteurModal, 900);
 });
