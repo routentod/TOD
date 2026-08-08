@@ -269,12 +269,52 @@ async function chargerVisiteurs() {
     return;
   }
 
-  visiteursGrid.innerHTML = data.map((row) => `
-    <label class="visiteur-check">
-      <input type="checkbox" name="visiteur" value="${row.identifiant}">
-      <span>${row.identifiant}</span>
-    </label>
-  `).join("");
+  // Regroupe les visiteurs par catégorie (les "sans catégorie" à la fin)
+  const groupes = new Map();
+  data.forEach((row) => {
+    const cle = row.categorie_nom || "__sans__";
+    if (!groupes.has(cle)) groupes.set(cle, []);
+    groupes.get(cle).push(row);
+  });
+
+  const cles = Array.from(groupes.keys()).sort((a, b) => {
+    if (a === "__sans__") return 1;
+    if (b === "__sans__") return -1;
+    return a.localeCompare(b);
+  });
+
+  visiteursGrid.innerHTML = cles.map((cle) => {
+    const titre = cle === "__sans__" ? "Sans catégorie" : cle;
+    const items = groupes.get(cle).map((row) => `
+      <label class="visiteur-check">
+        <input type="checkbox" name="visiteur" value="${row.identifiant}">
+        <span>${row.identifiant}</span>
+      </label>
+    `).join("");
+
+    return `
+      <div class="visiteurs-category">
+        <p class="visiteurs-category__title">${titre}</p>
+        <div class="visiteurs-category__items">${items}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ---- Catégories : chargement partagé (liste + remplissage des <select>) ----
+async function chargerListeCategories() {
+  const { data, error } = await supabase.rpc("get_categories");
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return data || [];
+}
+
+function remplirSelectCategorie(selectEl, categories, valeurSelectionnee) {
+  selectEl.innerHTML = `<option value="">Sans catégorie</option>` +
+    categories.map((c) => `<option value="${c.id}">${c.nom}</option>`).join("");
+  selectEl.value = valeurSelectionnee || "";
 }
 
 function openDefiModal() {
@@ -366,9 +406,13 @@ function setVisiteurMessage(text, type) {
   visiteurFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
 }
 
-function openVisiteurModal() {
+const nvCategorieInput = document.getElementById("nv-categorie-input");
+
+async function openVisiteurModal() {
   visiteurModal.classList.add("open");
   visiteurModalBackdrop.classList.add("open");
+  const categories = await chargerListeCategories();
+  remplirSelectCategorie(nvCategorieInput, categories, "");
 }
 
 function closeVisiteurModal() {
@@ -418,6 +462,15 @@ visiteurForm.addEventListener("submit", async (event) => {
     return;
   }
 
+  const categorieId = nvCategorieInput.value || null;
+  if (categorieId) {
+    const { error: catError } = await supabase.rpc("assigner_visiteur_categorie", {
+      p_identifiant: identifiant,
+      p_categorie_id: categorieId,
+    });
+    if (catError) console.error(catError);
+  }
+
   setVisiteurMessage("Compte créé !", "success");
   visiteurForm.reset();
   chargerDerniersComptes();
@@ -454,7 +507,9 @@ function setEditVisiteurMessage(text, type) {
   editVisiteurFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
 }
 
-function openEditVisiteurModal(identifiant) {
+const evCategorieInput = document.getElementById("ev-categorie-input");
+
+async function openEditVisiteurModal(identifiant) {
   setEditVisiteurMessage(null);
   editVisiteurForm.reset();
   evMotdepasseInput.type = "password";
@@ -464,6 +519,13 @@ function openEditVisiteurModal(identifiant) {
   if (evIdentifiantDisplay) evIdentifiantDisplay.textContent = identifiant;
   editVisiteurModal.classList.add("open");
   editVisiteurModalBackdrop.classList.add("open");
+
+  const [categories, comptes] = await Promise.all([
+    chargerListeCategories(),
+    supabase.rpc("get_comptes_visiteurs").then((r) => r.data || []),
+  ]);
+  const compte = comptes.find((c) => c.identifiant === identifiant);
+  remplirSelectCategorie(evCategorieInput, categories, compte?.categorie_id || "");
 }
 
 function closeEditVisiteurModal() {
@@ -482,8 +544,9 @@ editVisiteurForm.addEventListener("submit", async (event) => {
 
   const identifiant = evIdentifiantInput.value;
   const motDePasse = evMotdepasseInput.value;
+  const categorieId = evCategorieInput.value || null;
 
-  if (motDePasse.length < 6) {
+  if (motDePasse && motDePasse.length < 6) {
     setEditVisiteurMessage("Le mot de passe doit faire au moins 6 caractères.", "error");
     return;
   }
@@ -491,20 +554,151 @@ editVisiteurForm.addEventListener("submit", async (event) => {
   editVisiteurSubmitBtn.disabled = true;
   editVisiteurSubmitBtn.textContent = "Enregistrement...";
 
-  const { error } = await supabase.rpc("modifier_mot_de_passe_visiteur", {
+  const { error: catError } = await supabase.rpc("assigner_visiteur_categorie", {
     p_identifiant: identifiant,
-    p_nouveau_mot_de_passe: motDePasse,
+    p_categorie_id: categorieId,
   });
+
+  let mdpError = null;
+  if (motDePasse) {
+    const { error } = await supabase.rpc("modifier_mot_de_passe_visiteur", {
+      p_identifiant: identifiant,
+      p_nouveau_mot_de_passe: motDePasse,
+    });
+    mdpError = error;
+  }
 
   editVisiteurSubmitBtn.disabled = false;
   editVisiteurSubmitBtn.textContent = "Enregistrer";
 
-  if (error) {
-    console.error(error);
-    setEditVisiteurMessage(error.message || "Une erreur est survenue. Merci de réessayer.", "error");
+  if (catError || mdpError) {
+    console.error(catError || mdpError);
+    setEditVisiteurMessage((catError || mdpError).message || "Une erreur est survenue. Merci de réessayer.", "error");
     return;
   }
 
-  setEditVisiteurMessage("Mot de passe mis à jour !", "success");
+  setEditVisiteurMessage("Compte mis à jour !", "success");
+  chargerVisiteurs();
   setTimeout(closeEditVisiteurModal, 900);
+});
+
+// ---- Modale "Catégories" ----
+const categoriesBtn = document.getElementById("categories-btn");
+const categoriesModal = document.getElementById("categories-modal");
+const categoriesModalBackdrop = document.getElementById("categories-modal-backdrop");
+const categorieForm = document.getElementById("categorie-form");
+const ncNomInput = document.getElementById("nc-nom-input");
+const categorieFormMessage = document.getElementById("categorie-form-message");
+const categorieSubmitBtn = document.getElementById("categorie-submit-btn");
+const categoriesList = document.getElementById("categories-list");
+
+function setCategorieMessage(text, type) {
+  categorieFormMessage.hidden = !text;
+  categorieFormMessage.textContent = text || "";
+  categorieFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
+}
+
+async function chargerCategoriesModal() {
+  categoriesList.innerHTML = `<li class="account-item"><span class="account-item__name">Chargement...</span></li>`;
+  const categories = await chargerListeCategories();
+
+  if (categories.length === 0) {
+    categoriesList.innerHTML = `<li class="account-item"><span class="account-item__name">Aucune catégorie pour l'instant</span></li>`;
+    return;
+  }
+
+  categoriesList.innerHTML = categories.map((c) => `
+    <li class="account-item" data-id="${c.id}" data-nom="${c.nom}">
+      <div class="account-item__info">
+        <span class="account-item__name">${c.nom}</span>
+        <span class="account-item__date">${c.nb_visiteurs} visiteur${c.nb_visiteurs > 1 ? "s" : ""}</span>
+      </div>
+      <div class="account-item__actions">
+        <button type="button" class="account-action-btn" data-action="renommer" title="Renommer">${ICON_EDIT}</button>
+        <button type="button" class="account-action-btn account-action-btn--danger" data-action="supprimer" title="Supprimer">${ICON_TRASH}</button>
+      </div>
+    </li>
+  `).join("");
+}
+
+function openCategoriesModal() {
+  setCategorieMessage(null);
+  categorieForm.reset();
+  categoriesModal.classList.add("open");
+  categoriesModalBackdrop.classList.add("open");
+  chargerCategoriesModal();
+}
+
+function closeCategoriesModal() {
+  categoriesModal.classList.remove("open");
+  categoriesModalBackdrop.classList.remove("open");
+}
+
+categoriesBtn.addEventListener("click", openCategoriesModal);
+categoriesModalBackdrop.addEventListener("click", closeCategoriesModal);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeCategoriesModal();
+});
+
+categorieForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  setCategorieMessage(null);
+
+  const nom = ncNomInput.value.trim();
+  if (!nom) {
+    setCategorieMessage("Merci de renseigner un nom.", "error");
+    return;
+  }
+
+  categorieSubmitBtn.disabled = true;
+  categorieSubmitBtn.textContent = "Création...";
+
+  const { error } = await supabase.rpc("creer_categorie", { p_nom: nom });
+
+  categorieSubmitBtn.disabled = false;
+  categorieSubmitBtn.textContent = "Créer";
+
+  if (error) {
+    console.error(error);
+    setCategorieMessage(error.message || "Une erreur est survenue. Merci de réessayer.", "error");
+    return;
+  }
+
+  ncNomInput.value = "";
+  setCategorieMessage("Catégorie créée !", "success");
+  chargerCategoriesModal();
+});
+
+categoriesList.addEventListener("click", async (event) => {
+  const btn = event.target.closest(".account-action-btn");
+  if (!btn) return;
+
+  const item = btn.closest(".account-item");
+  const id = item?.dataset.id;
+  const nom = item?.dataset.nom;
+  if (!id) return;
+
+  if (btn.dataset.action === "renommer") {
+    const nouveauNom = prompt("Nouveau nom de la catégorie :", nom);
+    if (!nouveauNom || nouveauNom.trim() === "" || nouveauNom.trim() === nom) return;
+
+    const { error } = await supabase.rpc("renommer_categorie", { p_id: id, p_nom: nouveauNom.trim() });
+    if (error) {
+      console.error(error);
+      alert(error.message || "Impossible de renommer cette catégorie.");
+      return;
+    }
+    chargerCategoriesModal();
+  } else if (btn.dataset.action === "supprimer") {
+    const confirme = confirm(`Supprimer la catégorie "${nom}" ? Les visiteurs qu'elle contient repasseront "sans catégorie".`);
+    if (!confirme) return;
+
+    const { error } = await supabase.rpc("supprimer_categorie", { p_id: id });
+    if (error) {
+      console.error(error);
+      alert(error.message || "Impossible de supprimer cette catégorie.");
+      return;
+    }
+    chargerCategoriesModal();
+  }
 });
