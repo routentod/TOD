@@ -353,7 +353,6 @@ const editVisiteurModalBackdrop = document.getElementById("edit-visiteur-modal-b
 const editVisiteurForm = document.getElementById("edit-visiteur-form");
 const evIdentifiantInput = document.getElementById("ev-identifiant-input");
 const evIdentifiantDisplay = document.getElementById("ev-identifiant-display");
-const evAvatar = document.getElementById("ev-avatar");
 const evMotdepasseInput = document.getElementById("ev-motdepasse-input");
 const editVisiteurFormMessage = document.getElementById("edit-visiteur-form-message");
 const editVisiteurSubmitBtn = document.getElementById("edit-visiteur-submit-btn");
@@ -385,7 +384,6 @@ function openEditVisiteurModal(identifiant) {
   evEyeClosed.style.display = "none";
   evIdentifiantInput.value = identifiant;
   evIdentifiantDisplay.textContent = identifiant;
-  evAvatar.textContent = identifiant.slice(0, 2);
   editVisiteurModal.classList.add("open");
   editVisiteurModalBackdrop.classList.add("open");
 }
