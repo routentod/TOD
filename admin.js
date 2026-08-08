@@ -235,3 +235,76 @@ defiForm.addEventListener("submit", async (event) => {
 
   setTimeout(closeDefiModal, 900);
 });
+
+// ---- Modale "Nouveau visiteur" ----
+const newVisiteurBtn = document.getElementById("new-visiteur-btn");
+const visiteurModal = document.getElementById("visiteur-modal");
+const visiteurModalBackdrop = document.getElementById("visiteur-modal-backdrop");
+const visiteurForm = document.getElementById("visiteur-form");
+const nvIdentifiantInput = document.getElementById("nv-identifiant-input");
+const nvMotdepasseInput = document.getElementById("nv-motdepasse-input");
+const visiteurFormMessage = document.getElementById("visiteur-form-message");
+const visiteurSubmitBtn = document.getElementById("visiteur-submit-btn");
+
+function setVisiteurMessage(text, type) {
+  visiteurFormMessage.hidden = !text;
+  visiteurFormMessage.textContent = text || "";
+  visiteurFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
+}
+
+function openVisiteurModal() {
+  visiteurModal.classList.add("open");
+  visiteurModalBackdrop.classList.add("open");
+}
+
+function closeVisiteurModal() {
+  visiteurModal.classList.remove("open");
+  visiteurModalBackdrop.classList.remove("open");
+}
+
+newVisiteurBtn.addEventListener("click", openVisiteurModal);
+visiteurModalBackdrop.addEventListener("click", closeVisiteurModal);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeVisiteurModal();
+});
+
+visiteurForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  setVisiteurMessage(null);
+
+  const identifiant = nvIdentifiantInput.value.trim();
+  const motDePasse = nvMotdepasseInput.value;
+
+  if (!identifiant || !motDePasse) {
+    setVisiteurMessage("Merci de renseigner l'identifiant et le mot de passe.", "error");
+    return;
+  }
+
+  if (motDePasse.length < 6) {
+    setVisiteurMessage("Le mot de passe doit faire au moins 6 caractères.", "error");
+    return;
+  }
+
+  visiteurSubmitBtn.disabled = true;
+  visiteurSubmitBtn.textContent = "Création...";
+
+  const { error } = await supabase.rpc("creer_visiteur", {
+    p_identifiant: identifiant,
+    p_mot_de_passe: motDePasse,
+  });
+
+  visiteurSubmitBtn.disabled = false;
+  visiteurSubmitBtn.textContent = "Créer le compte";
+
+  if (error) {
+    console.error(error);
+    setVisiteurMessage(error.message || "Une erreur est survenue. Merci de réessayer.", "error");
+    return;
+  }
+
+  setVisiteurMessage("Compte créé !", "success");
+  visiteurForm.reset();
+  chargerDerniersComptes();
+
+  setTimeout(closeVisiteurModal, 900);
+});
