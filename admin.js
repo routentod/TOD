@@ -311,10 +311,25 @@ async function chargerListeCategories() {
   return data || [];
 }
 
-function remplirSelectCategorie(selectEl, categories, valeurSelectionnee) {
-  selectEl.innerHTML = `<option value="">Sans catégorie</option>` +
-    categories.map((c) => `<option value="${c.id}">${c.nom}</option>`).join("");
-  selectEl.value = valeurSelectionnee || "";
+function remplirTagsCategorie(containerEl, categories, valeurSelectionnee) {
+  containerEl.dataset.selected = valeurSelectionnee || "";
+
+  const tous = [{ id: "", nom: "Sans catégorie" }, ...categories];
+
+  containerEl.innerHTML = tous.map((c) => `
+    <button type="button" class="categorie-tag${c.id === (valeurSelectionnee || "") ? " active" : ""}" data-id="${c.id}">${c.nom}</button>
+  `).join("");
+
+  containerEl.querySelectorAll(".categorie-tag").forEach((tag) => {
+    tag.addEventListener("click", () => {
+      containerEl.dataset.selected = tag.dataset.id;
+      containerEl.querySelectorAll(".categorie-tag").forEach((t) => t.classList.toggle("active", t === tag));
+    });
+  });
+}
+
+function getCategorieSelectionnee(containerEl) {
+  return containerEl.dataset.selected || null;
 }
 
 function openDefiModal() {
@@ -406,13 +421,13 @@ function setVisiteurMessage(text, type) {
   visiteurFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
 }
 
-const nvCategorieInput = document.getElementById("nv-categorie-input");
+const nvCategorieTags = document.getElementById("nv-categorie-tags");
 
 async function openVisiteurModal() {
   visiteurModal.classList.add("open");
   visiteurModalBackdrop.classList.add("open");
   const categories = await chargerListeCategories();
-  remplirSelectCategorie(nvCategorieInput, categories, "");
+  remplirTagsCategorie(nvCategorieTags, categories, "");
 }
 
 function closeVisiteurModal() {
@@ -462,7 +477,7 @@ visiteurForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const categorieId = nvCategorieInput.value || null;
+  const categorieId = getCategorieSelectionnee(nvCategorieTags);
   if (categorieId) {
     const { error: catError } = await supabase.rpc("assigner_visiteur_categorie", {
       p_identifiant: identifiant,
@@ -507,7 +522,7 @@ function setEditVisiteurMessage(text, type) {
   editVisiteurFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
 }
 
-const evCategorieInput = document.getElementById("ev-categorie-input");
+const evCategorieTags = document.getElementById("ev-categorie-tags");
 
 async function openEditVisiteurModal(identifiant) {
   setEditVisiteurMessage(null);
@@ -525,7 +540,7 @@ async function openEditVisiteurModal(identifiant) {
     supabase.rpc("get_comptes_visiteurs").then((r) => r.data || []),
   ]);
   const compte = comptes.find((c) => c.identifiant === identifiant);
-  remplirSelectCategorie(evCategorieInput, categories, compte?.categorie_id || "");
+  remplirTagsCategorie(evCategorieTags, categories, compte?.categorie_id || "");
 }
 
 function closeEditVisiteurModal() {
@@ -544,7 +559,7 @@ editVisiteurForm.addEventListener("submit", async (event) => {
 
   const identifiant = evIdentifiantInput.value;
   const motDePasse = evMotdepasseInput.value;
-  const categorieId = evCategorieInput.value || null;
+  const categorieId = getCategorieSelectionnee(evCategorieTags);
 
   if (motDePasse && motDePasse.length < 6) {
     setEditVisiteurMessage("Le mot de passe doit faire au moins 6 caractères.", "error");
