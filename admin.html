@@ -710,6 +710,7 @@ body {
       <div class="topbar__right">
         <div id="clock" class="clock">--:--</div>
         <button id="new-visiteur-btn" class="new-defi-btn" type="button">+ Nouveau visiteur</button>
+        <button id="categories-btn" class="new-defi-btn" type="button">Catégories</button>
         <button id="new-defi-btn" class="new-defi-btn" type="button">+ Nouveau défi</button>
         <button id="logout-btn" class="logout-btn" type="button">Déconnexion</button>
       </div>
@@ -809,6 +810,13 @@ body {
         <input type="password" id="nv-motdepasse-input" placeholder="mot de passe" autocomplete="new-password" minlength="6" required>
       </div>
 
+      <div class="field">
+        <span class="field__label">Catégorie</span>
+        <select id="nv-categorie-input">
+          <option value="">Sans catégorie</option>
+        </select>
+      </div>
+
       <p id="visiteur-form-message" class="modal-message" hidden></p>
 
       <button type="submit" class="modal-submit-btn" id="visiteur-submit-btn">Créer le compte</button>
@@ -820,7 +828,7 @@ body {
 
   <div class="modal-panel" id="edit-visiteur-modal">
     <h2 class="modal-panel__title">Modifier le compte</h2>
-    <p class="modal-panel__subtitle">Définis un nouveau mot de passe pour ce visiteur. L'identifiant ne peut pas être changé.</p>
+    <p class="modal-panel__subtitle">Change la catégorie et/ou le mot de passe de ce visiteur. L'identifiant ne peut pas être changé.</p>
 
     <form id="edit-visiteur-form">
       <div class="field">
@@ -833,9 +841,16 @@ body {
       </div>
 
       <div class="field">
+        <span class="field__label">Catégorie</span>
+        <select id="ev-categorie-input">
+          <option value="">Sans catégorie</option>
+        </select>
+      </div>
+
+      <div class="field">
         <span class="field__label">Nouveau mot de passe</span>
         <div class="field__password">
-          <input type="password" id="ev-motdepasse-input" placeholder="mot de passe" autocomplete="new-password" minlength="6" required>
+          <input type="password" id="ev-motdepasse-input" placeholder="laisser vide pour ne pas changer" autocomplete="new-password" minlength="6">
           <button type="button" class="field-password-toggle" id="ev-toggle-password" aria-label="Afficher le mot de passe">
             <svg id="ev-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
             <svg id="ev-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a19.8 19.8 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -846,6 +861,34 @@ body {
       <p id="edit-visiteur-form-message" class="modal-message" hidden></p>
 
       <button type="submit" class="modal-submit-btn" id="edit-visiteur-submit-btn">Enregistrer</button>
+    </form>
+  </div>
+
+  <!-- Modale "Catégories" -->
+  <div class="modal-backdrop" id="categories-modal-backdrop"></div>
+
+  <div class="modal-panel" id="categories-modal">
+    <h2 class="modal-panel__title">Catégories</h2>
+
+    <form id="categorie-form">
+      <div class="field-row">
+        <label class="field" style="flex:2">
+          <span class="field__label">Nouvelle catégorie</span>
+          <input type="text" id="nc-nom-input" placeholder="Nom de la catégorie" required>
+        </label>
+        <div class="field" style="justify-content:flex-end">
+          <button type="submit" class="modal-submit-btn" id="categorie-submit-btn">Créer</button>
+        </div>
+      </div>
+
+      <p id="categorie-form-message" class="modal-message" hidden></p>
+
+      <div class="field">
+        <span class="field__label">Catégories existantes</span>
+        <ul class="account-list" id="categories-list" style="max-height:260px">
+          <!-- Rempli dynamiquement par admin.js -->
+        </ul>
+      </div>
     </form>
   </div>
 
