@@ -106,7 +106,7 @@ async function chargerDerniersComptes() {
 
   list.innerHTML = data.map((row) => `
     <li class="account-item">
-      <span class="account-item__name">${row.identifiant}</span>
+      <span class="account-item__name">${row.identifiant}${row.identite ? ` <span style="color:var(--ink-dim);font-weight:400">(${row.identite})</span>` : ""}</span>
       <span class="account-item__date">${formatDate(row.created_at)}</span>
     </li>
   `).join("");
@@ -242,6 +242,7 @@ const visiteurModal = document.getElementById("visiteur-modal");
 const visiteurModalBackdrop = document.getElementById("visiteur-modal-backdrop");
 const visiteurForm = document.getElementById("visiteur-form");
 const nvIdentifiantInput = document.getElementById("nv-identifiant-input");
+const nvIdentiteInput = document.getElementById("nv-identite-input");
 const nvMotdepasseInput = document.getElementById("nv-motdepasse-input");
 const visiteurFormMessage = document.getElementById("visiteur-form-message");
 const visiteurSubmitBtn = document.getElementById("visiteur-submit-btn");
@@ -273,6 +274,7 @@ visiteurForm.addEventListener("submit", async (event) => {
   setVisiteurMessage(null);
 
   const identifiant = nvIdentifiantInput.value.trim();
+  const identite = nvIdentiteInput.value.trim();
   const motDePasse = nvMotdepasseInput.value;
 
   if (!identifiant || !motDePasse) {
@@ -291,6 +293,7 @@ visiteurForm.addEventListener("submit", async (event) => {
   const { error } = await supabase.rpc("creer_visiteur", {
     p_identifiant: identifiant,
     p_mot_de_passe: motDePasse,
+    p_identite: identite || null,
   });
 
   visiteurSubmitBtn.disabled = false;
