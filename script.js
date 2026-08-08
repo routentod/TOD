@@ -83,8 +83,9 @@ form.addEventListener("submit", async (event) => {
 
     if (resultat.role === "admin") {
       window.location.href = "admin.html";
+    } else if (resultat.role === "visiteur") {
+      window.location.href = "visiteur.html";
     }
-    // Le côté visiteur (redirection + page dédiée) sera branché ensuite.
   } else {
     setError("Identifiant ou mot de passe incorrect.");
   }
