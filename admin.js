@@ -134,10 +134,14 @@ document.getElementById("account-list").addEventListener("click", (event) => {
   const identifiant = item?.dataset.identifiant;
   if (!identifiant) return;
 
-  if (btn.dataset.action === "edit") {
-    openEditVisiteurModal(identifiant);
-  } else if (btn.dataset.action === "delete") {
-    supprimerVisiteur(identifiant);
+  try {
+    if (btn.dataset.action === "edit") {
+      openEditVisiteurModal(identifiant);
+    } else if (btn.dataset.action === "delete") {
+      supprimerVisiteur(identifiant);
+    }
+  } catch (err) {
+    console.error("Erreur en ouvrant l'action compte :", err);
   }
 });
 
@@ -383,7 +387,7 @@ function openEditVisiteurModal(identifiant) {
   evEyeOpen.style.display = "block";
   evEyeClosed.style.display = "none";
   evIdentifiantInput.value = identifiant;
-  evIdentifiantDisplay.textContent = identifiant;
+  if (evIdentifiantDisplay) evIdentifiantDisplay.textContent = identifiant;
   editVisiteurModal.classList.add("open");
   editVisiteurModalBackdrop.classList.add("open");
 }
