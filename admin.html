@@ -559,30 +559,6 @@ body {
 .field-row { display: flex; gap: 12px; }
 .field-row .field { flex: 1; }
 
-.joueurs-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  max-height: 220px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.joueurs-category__title {
-  margin: 0 0 8px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-}
-
-.joueurs-category__items {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
 .categorie-tags {
   display: flex;
   flex-wrap: wrap;
@@ -615,72 +591,6 @@ body {
   border-color: var(--metal-1);
   color: #1c2138;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-.joueur-check {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 12px;
-  border-radius: 12px;
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border);
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
-}
-
-.joueur-check:hover {
-  background: var(--glass-bg);
-  border-color: rgba(255, 255, 255, 0.26);
-}
-
-.joueur-check:active { transform: translateY(1px); }
-
-.joueur-check:has(input:checked) {
-  border-color: rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 6px 16px -8px rgba(0, 0, 0, 0.5);
-  font-weight: 600;
-}
-
-.joueur-check input {
-  appearance: none;
-  -webkit-appearance: none;
-  margin: 0;
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  border-radius: 7px;
-  border: 1.5px solid rgba(255, 255, 255, 0.28);
-  background: rgba(6, 9, 26, 0.45);
-  cursor: pointer;
-  position: relative;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
-}
-
-.joueur-check input:hover {
-  border-color: var(--metal-2);
-}
-
-.joueur-check input:checked {
-  background: linear-gradient(180deg, var(--metal-1) 0%, var(--metal-2) 45%, var(--metal-3) 100%);
-  border-color: var(--metal-1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 0 3px rgba(255, 255, 255, 0.12);
-  transform: scale(1.04);
-}
-
-.joueur-check input:checked::after {
-  content: "";
-  position: absolute;
-  left: 6px;
-  top: 2px;
-  width: 6px;
-  height: 10px;
-  border: solid #1c2138;
-  border-width: 0 2.2px 2.2px 0;
-  transform: rotate(45deg);
 }
 
 .modal-submit-btn {
@@ -851,10 +761,8 @@ body {
       </div>
 
       <div class="field">
-        <span class="field__label">Joueurs concernés</span>
-        <div class="joueurs-grid" id="joueurs-grid">
-          <!-- Rempli dynamiquement par admin.js -->
-        </div>
+        <span class="field__label">Catégories concernées</span>
+        <div class="categorie-tags" id="defi-categorie-tags"></div>
       </div>
 
       <p id="defi-form-message" class="modal-message" hidden></p>
