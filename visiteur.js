@@ -24,6 +24,7 @@ const defiTitreEl = document.getElementById("defi-titre");
 const defiMontantEl = document.getElementById("defi-montant");
 const timerEl = document.getElementById("timer");
 const toggleProofBtn = document.getElementById("toggle-proof-btn");
+const proofDoneEl = document.getElementById("proof-done");
 const proofForm = document.getElementById("proof-form");
 const proofTitreInput = document.getElementById("proof-titre");
 const proofLienInput = document.getElementById("proof-lien");
@@ -185,6 +186,11 @@ function initMap() {
   setTimeout(() => map.invalidateSize(), 200);
 }
 
+function afficherPreuveDejaEnvoyee() {
+  toggleProofBtn.hidden = true;
+  proofDoneEl.hidden = false;
+}
+
 // ---- Chargement du défi actuel ----
 async function chargerDefi() {
   const { data, error } = await supabase.rpc("get_defi_actuel");
@@ -204,6 +210,13 @@ async function chargerDefi() {
   lanceLe = defi.lance_le;
 
   demarrerTimer();
+
+  const { data: dejaEnvoye } = await supabase.rpc("a_envoye_preuve", {
+    p_identifiant: identifiant,
+  });
+  if (dejaEnvoye) {
+    afficherPreuveDejaEnvoyee();
+  }
 }
 
 // ---- Timer qui descend tout seul depuis le lancement ----
@@ -347,6 +360,11 @@ proofForm.addEventListener("submit", async (event) => {
     imageFile = null;
     pasteZone.innerHTML = "Cliquez ici puis collez votre image (Ctrl+V)";
     pasteZone.classList.remove("has-image");
+
+    setTimeout(() => {
+      closeProofForm();
+      afficherPreuveDejaEnvoyee();
+    }, 900);
   } catch (err) {
     console.error(err);
     setFormMessage("Une erreur est survenue. Merci de réessayer.", "error");
