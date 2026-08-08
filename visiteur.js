@@ -187,8 +187,9 @@ function initMap() {
 }
 
 function afficherPreuveDejaEnvoyee() {
-  toggleProofBtn.hidden = true;
+  toggleProofBtn.style.display = "none";
   proofDoneEl.hidden = false;
+  proofDoneEl.style.display = "flex";
 }
 
 // ---- Chargement du défi actuel ----
