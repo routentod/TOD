@@ -68,8 +68,6 @@ body {
   text-align: center;
 }
 
-/* Fond qui recouvre toute la page quand le formulaire est ouvert.
-   Cliquer dessus (en dehors du formulaire) referme le formulaire. */
 .proof-backdrop {
   position: fixed;
   inset: 0;
@@ -181,6 +179,20 @@ body {
 
 .cta:hover { filter: brightness(1.04); }
 .cta:active { transform: translateY(1px); }
+
+.proof-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  background: rgba(139, 230, 168, 0.14);
+  border: 1px solid rgba(139, 230, 168, 0.4);
+  color: var(--success);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+}
 
 .proof-panel {
   position: fixed;
@@ -379,6 +391,7 @@ body {
 
       <div class="proof-trigger" id="proof-trigger">
         <button class="cta" id="toggle-proof-btn" type="button">Ajouter ma preuve</button>
+        <div class="proof-done" id="proof-done" hidden>✓ Preuve envoyée</div>
 
         <form class="proof-panel" id="proof-form">
           <div class="field">
