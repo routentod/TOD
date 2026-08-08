@@ -86,8 +86,8 @@ async function chargerDefis() {
   list.innerHTML = data.map((defi) => {
     const identifiants = defi.identifiants || [];
     const tags = identifiants.length
-      ? identifiants.map((id) => `<span class="visiteur-tag">${id}</span>`).join("")
-      : `<span class="visiteur-tag">Aucun visiteur</span>`;
+      ? identifiants.map((id) => `<span class="joueur-tag">${id}</span>`).join("")
+      : `<span class="joueur-tag">Aucun joueur</span>`;
 
     return `
     <li class="defi-item" data-id="${defi.id}" data-lance-le="${defi.lance_le || ""}" data-duree="${defi.duree_secondes}">
@@ -99,7 +99,7 @@ async function chargerDefis() {
         <span class="defi-item__montant">${defi.montant}$</span>
         <span class="defi-item__timer">--:--:--</span>
       </div>
-      <div class="defi-item__visiteurs">${tags}</div>
+      <div class="defi-item__joueurs">${tags}</div>
     </li>
   `;
   }).join("");
@@ -144,59 +144,82 @@ setInterval(mettreAJourTimersDefis, 1000);
 const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
 const ICON_TRASH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>`;
 
-async function chargerDerniersComptes() {
+const ICON_CLOSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+
+async function chargerComptesParCategorie() {
   const list = document.getElementById("account-list");
-  const { data, error } = await supabase.rpc("get_derniers_comptes", { p_limit: 5 });
+  const { data, error } = await supabase.rpc("get_comptes_visiteurs");
 
   if (error) {
     console.error(error);
+    list.innerHTML = `<li class="defi-item"><span class="defi-item__titre">Impossible de charger les comptes.</span></li>`;
     return;
   }
 
   if (!data || data.length === 0) {
-    list.innerHTML = `<li class="account-item"><span class="account-item__name">Aucun compte pour l'instant</span></li>`;
+    list.innerHTML = `<li class="defi-item"><span class="defi-item__titre">Aucun compte pour l'instant</span></li>`;
     return;
   }
 
-  list.innerHTML = data.map((row) => `
-    <li class="account-item" data-identifiant="${row.identifiant}">
-      <div class="account-item__info">
-        <span class="account-item__name">${row.identifiant}${row.identite ? ` <span style="color:var(--ink-dim);font-weight:400">(${row.identite})</span>` : ""}</span>
-        <span class="account-item__date">${formatDate(row.created_at)}</span>
-      </div>
-      <div class="account-item__actions">
-        <button type="button" class="account-action-btn" data-action="edit" title="Modifier le mot de passe">${ICON_EDIT}</button>
-        <button type="button" class="account-action-btn account-action-btn--danger" data-action="delete" title="Supprimer le compte">${ICON_TRASH}</button>
-      </div>
-    </li>
-  `).join("");
+  // Regroupe les joueurs par catégorie (les "sans catégorie" à la fin)
+  const groupes = new Map();
+  data.forEach((row) => {
+    const cle = row.categorie_nom || "__sans__";
+    if (!groupes.has(cle)) groupes.set(cle, []);
+    groupes.get(cle).push(row);
+  });
+
+  const cles = Array.from(groupes.keys()).sort((a, b) => {
+    if (a === "__sans__") return 1;
+    if (b === "__sans__") return -1;
+    return a.localeCompare(b);
+  });
+
+  list.innerHTML = cles.map((cle) => {
+    const titre = cle === "__sans__" ? "Sans catégorie" : cle;
+    const tags = groupes.get(cle).map((row) => `
+      <span class="compte-tag" data-identifiant="${row.identifiant}">
+        ${row.identifiant}
+        <span class="compte-tag__del" data-action="delete" title="Supprimer ce joueur">${ICON_CLOSE}</span>
+      </span>
+    `).join("");
+
+    return `
+      <li class="defi-item">
+        <div class="defi-item__top">
+          <span class="defi-item__titre">${titre}</span>
+        </div>
+        <div class="defi-item__joueurs">${tags}</div>
+      </li>
+    `;
+  }).join("");
 }
 
 chargerClassement();
 chargerDefis();
-chargerDerniersComptes();
+chargerComptesParCategorie();
 
-// ---- Actions sur un compte (modifier / supprimer) ----
+// ---- Actions sur un compte (clic = modifier, ✕ = supprimer) ----
 document.getElementById("account-list").addEventListener("click", (event) => {
-  const btn = event.target.closest(".account-action-btn");
-  if (!btn) return;
+  const delBtn = event.target.closest(".compte-tag__del");
+  const tag = event.target.closest(".compte-tag");
+  if (!tag) return;
 
-  const item = btn.closest(".account-item");
-  const identifiant = item?.dataset.identifiant;
+  const identifiant = tag.dataset.identifiant;
   if (!identifiant) return;
 
   try {
-    if (btn.dataset.action === "edit") {
-      openEditVisiteurModal(identifiant);
-    } else if (btn.dataset.action === "delete") {
-      supprimerVisiteur(identifiant);
+    if (delBtn) {
+      supprimerJoueur(identifiant);
+    } else {
+      openEditJoueurModal(identifiant);
     }
   } catch (err) {
     console.error("Erreur en ouvrant l'action compte :", err);
   }
 });
 
-async function supprimerVisiteur(identifiant) {
+async function supprimerJoueur(identifiant) {
   const confirme = confirm(`Supprimer le compte "${identifiant}" ? Cette action est irréversible.`);
   if (!confirme) return;
 
@@ -208,8 +231,9 @@ async function supprimerVisiteur(identifiant) {
     return;
   }
 
-  chargerDerniersComptes();
+  chargerComptesParCategorie();
 }
+
 
 // ---- Suppression d'un défi ----
 document.getElementById("timeline-list").addEventListener("click", async (event) => {
@@ -243,7 +267,7 @@ const defiTitreInput = document.getElementById("defi-titre-input");
 const defiMontantInput = document.getElementById("defi-montant-input");
 const defiHeuresInput = document.getElementById("defi-heures-input");
 const defiMinutesInput = document.getElementById("defi-minutes-input");
-const visiteursGrid = document.getElementById("visiteurs-grid");
+const joueursGrid = document.getElementById("joueurs-grid");
 const defiFormMessage = document.getElementById("defi-form-message");
 const defiSubmitBtn = document.getElementById("defi-submit-btn");
 
@@ -253,23 +277,23 @@ function setDefiMessage(text, type) {
   defiFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
 }
 
-async function chargerVisiteurs() {
-  visiteursGrid.innerHTML = `<span style="font-size:12.5px;color:var(--ink-dim)">Chargement...</span>`;
+async function chargerJoueurs() {
+  joueursGrid.innerHTML = `<span style="font-size:12.5px;color:var(--ink-dim)">Chargement...</span>`;
 
   const { data, error } = await supabase.rpc("get_comptes_visiteurs");
 
   if (error) {
     console.error(error);
-    visiteursGrid.innerHTML = `<span style="font-size:12.5px;color:var(--danger)">Impossible de charger les visiteurs.</span>`;
+    joueursGrid.innerHTML = `<span style="font-size:12.5px;color:var(--danger)">Impossible de charger les joueurs.</span>`;
     return;
   }
 
   if (!data || data.length === 0) {
-    visiteursGrid.innerHTML = `<span style="font-size:12.5px;color:var(--ink-dim)">Aucun visiteur pour l'instant</span>`;
+    joueursGrid.innerHTML = `<span style="font-size:12.5px;color:var(--ink-dim)">Aucun joueur pour l'instant</span>`;
     return;
   }
 
-  // Regroupe les visiteurs par catégorie (les "sans catégorie" à la fin)
+  // Regroupe les joueurs par catégorie (les "sans catégorie" à la fin)
   const groupes = new Map();
   data.forEach((row) => {
     const cle = row.categorie_nom || "__sans__";
@@ -283,19 +307,19 @@ async function chargerVisiteurs() {
     return a.localeCompare(b);
   });
 
-  visiteursGrid.innerHTML = cles.map((cle) => {
+  joueursGrid.innerHTML = cles.map((cle) => {
     const titre = cle === "__sans__" ? "Sans catégorie" : cle;
     const items = groupes.get(cle).map((row) => `
-      <label class="visiteur-check">
-        <input type="checkbox" name="visiteur" value="${row.identifiant}">
+      <label class="joueur-check">
+        <input type="checkbox" name="joueur" value="${row.identifiant}">
         <span>${row.identifiant}</span>
       </label>
     `).join("");
 
     return `
-      <div class="visiteurs-category">
-        <p class="visiteurs-category__title">${titre}</p>
-        <div class="visiteurs-category__items">${items}</div>
+      <div class="joueurs-category">
+        <p class="joueurs-category__title">${titre}</p>
+        <div class="joueurs-category__items">${items}</div>
       </div>
     `;
   }).join("");
@@ -335,7 +359,7 @@ function getCategorieSelectionnee(containerEl) {
 function openDefiModal() {
   defiModal.classList.add("open");
   defiModalBackdrop.classList.add("open");
-  chargerVisiteurs();
+  chargerJoueurs();
 }
 
 function closeDefiModal() {
@@ -360,7 +384,7 @@ defiForm.addEventListener("submit", async (event) => {
   const dureeSecondes = heures * 3600 + minutes * 60;
 
   const identifiantsChoisis = Array.from(
-    visiteursGrid.querySelectorAll('input[name="visiteur"]:checked')
+    joueursGrid.querySelectorAll('input[name="joueur"]:checked')
   ).map((input) => input.value);
 
   if (!titre || isNaN(montant)) {
@@ -374,7 +398,7 @@ defiForm.addEventListener("submit", async (event) => {
   }
 
   if (identifiantsChoisis.length === 0) {
-    setDefiMessage("Coche au moins un visiteur concerné.", "error");
+    setDefiMessage("Coche au moins un joueur concerné.", "error");
     return;
   }
 
@@ -404,63 +428,63 @@ defiForm.addEventListener("submit", async (event) => {
   setTimeout(closeDefiModal, 900);
 });
 
-// ---- Modale "Nouveau visiteur" ----
-const newVisiteurBtn = document.getElementById("new-visiteur-btn");
-const visiteurModal = document.getElementById("visiteur-modal");
-const visiteurModalBackdrop = document.getElementById("visiteur-modal-backdrop");
-const visiteurForm = document.getElementById("visiteur-form");
+// ---- Modale "Nouveau joueur" ----
+const newJoueurBtn = document.getElementById("new-joueur-btn");
+const joueurModal = document.getElementById("joueur-modal");
+const joueurModalBackdrop = document.getElementById("joueur-modal-backdrop");
+const joueurForm = document.getElementById("joueur-form");
 const nvIdentifiantInput = document.getElementById("nv-identifiant-input");
 const nvIdentiteInput = document.getElementById("nv-identite-input");
 const nvMotdepasseInput = document.getElementById("nv-motdepasse-input");
-const visiteurFormMessage = document.getElementById("visiteur-form-message");
-const visiteurSubmitBtn = document.getElementById("visiteur-submit-btn");
+const joueurFormMessage = document.getElementById("joueur-form-message");
+const joueurSubmitBtn = document.getElementById("joueur-submit-btn");
 
-function setVisiteurMessage(text, type) {
-  visiteurFormMessage.hidden = !text;
-  visiteurFormMessage.textContent = text || "";
-  visiteurFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
+function setJoueurMessage(text, type) {
+  joueurFormMessage.hidden = !text;
+  joueurFormMessage.textContent = text || "";
+  joueurFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
 }
 
 const nvCategorieTags = document.getElementById("nv-categorie-tags");
 
-async function openVisiteurModal() {
-  visiteurModal.classList.add("open");
-  visiteurModalBackdrop.classList.add("open");
+async function openJoueurModal() {
+  joueurModal.classList.add("open");
+  joueurModalBackdrop.classList.add("open");
   const categories = await chargerListeCategories();
   remplirTagsCategorie(nvCategorieTags, categories, "");
 }
 
-function closeVisiteurModal() {
-  visiteurModal.classList.remove("open");
-  visiteurModalBackdrop.classList.remove("open");
+function closeJoueurModal() {
+  joueurModal.classList.remove("open");
+  joueurModalBackdrop.classList.remove("open");
 }
 
-newVisiteurBtn.addEventListener("click", openVisiteurModal);
-visiteurModalBackdrop.addEventListener("click", closeVisiteurModal);
+newJoueurBtn.addEventListener("click", openJoueurModal);
+joueurModalBackdrop.addEventListener("click", closeJoueurModal);
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeVisiteurModal();
+  if (e.key === "Escape") closeJoueurModal();
 });
 
-visiteurForm.addEventListener("submit", async (event) => {
+joueurForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  setVisiteurMessage(null);
+  setJoueurMessage(null);
 
   const identifiant = nvIdentifiantInput.value.trim();
   const identite = nvIdentiteInput.value.trim();
   const motDePasse = nvMotdepasseInput.value;
 
   if (!identifiant || !motDePasse) {
-    setVisiteurMessage("Merci de renseigner l'identifiant et le mot de passe.", "error");
+    setJoueurMessage("Merci de renseigner l'identifiant et le mot de passe.", "error");
     return;
   }
 
   if (motDePasse.length < 6) {
-    setVisiteurMessage("Le mot de passe doit faire au moins 6 caractères.", "error");
+    setJoueurMessage("Le mot de passe doit faire au moins 6 caractères.", "error");
     return;
   }
 
-  visiteurSubmitBtn.disabled = true;
-  visiteurSubmitBtn.textContent = "Création...";
+  joueurSubmitBtn.disabled = true;
+  joueurSubmitBtn.textContent = "Création...";
 
   const { error } = await supabase.rpc("creer_visiteur", {
     p_identifiant: identifiant,
@@ -468,12 +492,12 @@ visiteurForm.addEventListener("submit", async (event) => {
     p_identite: identite || null,
   });
 
-  visiteurSubmitBtn.disabled = false;
-  visiteurSubmitBtn.textContent = "Créer le compte";
+  joueurSubmitBtn.disabled = false;
+  joueurSubmitBtn.textContent = "Créer le compte";
 
   if (error) {
     console.error(error);
-    setVisiteurMessage(error.message || "Une erreur est survenue. Merci de réessayer.", "error");
+    setJoueurMessage(error.message || "Une erreur est survenue. Merci de réessayer.", "error");
     return;
   }
 
@@ -486,22 +510,22 @@ visiteurForm.addEventListener("submit", async (event) => {
     if (catError) console.error(catError);
   }
 
-  setVisiteurMessage("Compte créé !", "success");
-  visiteurForm.reset();
-  chargerDerniersComptes();
+  setJoueurMessage("Compte créé !", "success");
+  joueurForm.reset();
+  chargerComptesParCategorie();
 
-  setTimeout(closeVisiteurModal, 900);
+  setTimeout(closeJoueurModal, 900);
 });
 
-// ---- Modale "Modifier le compte visiteur" ----
-const editVisiteurModal = document.getElementById("edit-visiteur-modal");
-const editVisiteurModalBackdrop = document.getElementById("edit-visiteur-modal-backdrop");
-const editVisiteurForm = document.getElementById("edit-visiteur-form");
+// ---- Modale "Modifier le compte joueur" ----
+const editJoueurModal = document.getElementById("edit-joueur-modal");
+const editJoueurModalBackdrop = document.getElementById("edit-joueur-modal-backdrop");
+const editJoueurForm = document.getElementById("edit-joueur-form");
 const evIdentifiantInput = document.getElementById("ev-identifiant-input");
 const evIdentifiantDisplay = document.getElementById("ev-identifiant-display");
 const evMotdepasseInput = document.getElementById("ev-motdepasse-input");
-const editVisiteurFormMessage = document.getElementById("edit-visiteur-form-message");
-const editVisiteurSubmitBtn = document.getElementById("edit-visiteur-submit-btn");
+const editJoueurFormMessage = document.getElementById("edit-joueur-form-message");
+const editJoueurSubmitBtn = document.getElementById("edit-joueur-submit-btn");
 
 // Afficher / masquer le mot de passe (modale "Modifier le compte")
 const evTogglePassword = document.getElementById("ev-toggle-password");
@@ -516,24 +540,24 @@ evTogglePassword.addEventListener("click", () => {
   evTogglePassword.setAttribute("aria-label", isPassword ? "Masquer le mot de passe" : "Afficher le mot de passe");
 });
 
-function setEditVisiteurMessage(text, type) {
-  editVisiteurFormMessage.hidden = !text;
-  editVisiteurFormMessage.textContent = text || "";
-  editVisiteurFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
+function setEditJoueurMessage(text, type) {
+  editJoueurFormMessage.hidden = !text;
+  editJoueurFormMessage.textContent = text || "";
+  editJoueurFormMessage.className = "modal-message" + (type ? ` modal-message--${type}` : "");
 }
 
 const evCategorieTags = document.getElementById("ev-categorie-tags");
 
-async function openEditVisiteurModal(identifiant) {
-  setEditVisiteurMessage(null);
-  editVisiteurForm.reset();
+async function openEditJoueurModal(identifiant) {
+  setEditJoueurMessage(null);
+  editJoueurForm.reset();
   evMotdepasseInput.type = "password";
   evEyeOpen.style.display = "block";
   evEyeClosed.style.display = "none";
   evIdentifiantInput.value = identifiant;
   if (evIdentifiantDisplay) evIdentifiantDisplay.textContent = identifiant;
-  editVisiteurModal.classList.add("open");
-  editVisiteurModalBackdrop.classList.add("open");
+  editJoueurModal.classList.add("open");
+  editJoueurModalBackdrop.classList.add("open");
 
   const [categories, comptes] = await Promise.all([
     chargerListeCategories(),
@@ -543,31 +567,31 @@ async function openEditVisiteurModal(identifiant) {
   remplirTagsCategorie(evCategorieTags, categories, compte?.categorie_id || "");
 }
 
-function closeEditVisiteurModal() {
-  editVisiteurModal.classList.remove("open");
-  editVisiteurModalBackdrop.classList.remove("open");
+function closeEditJoueurModal() {
+  editJoueurModal.classList.remove("open");
+  editJoueurModalBackdrop.classList.remove("open");
 }
 
-editVisiteurModalBackdrop.addEventListener("click", closeEditVisiteurModal);
+editJoueurModalBackdrop.addEventListener("click", closeEditJoueurModal);
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeEditVisiteurModal();
+  if (e.key === "Escape") closeEditJoueurModal();
 });
 
-editVisiteurForm.addEventListener("submit", async (event) => {
+editJoueurForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  setEditVisiteurMessage(null);
+  setEditJoueurMessage(null);
 
   const identifiant = evIdentifiantInput.value;
   const motDePasse = evMotdepasseInput.value;
   const categorieId = getCategorieSelectionnee(evCategorieTags);
 
   if (motDePasse && motDePasse.length < 6) {
-    setEditVisiteurMessage("Le mot de passe doit faire au moins 6 caractères.", "error");
+    setEditJoueurMessage("Le mot de passe doit faire au moins 6 caractères.", "error");
     return;
   }
 
-  editVisiteurSubmitBtn.disabled = true;
-  editVisiteurSubmitBtn.textContent = "Enregistrement...";
+  editJoueurSubmitBtn.disabled = true;
+  editJoueurSubmitBtn.textContent = "Enregistrement...";
 
   const { error: catError } = await supabase.rpc("assigner_visiteur_categorie", {
     p_identifiant: identifiant,
@@ -583,18 +607,18 @@ editVisiteurForm.addEventListener("submit", async (event) => {
     mdpError = error;
   }
 
-  editVisiteurSubmitBtn.disabled = false;
-  editVisiteurSubmitBtn.textContent = "Enregistrer";
+  editJoueurSubmitBtn.disabled = false;
+  editJoueurSubmitBtn.textContent = "Enregistrer";
 
   if (catError || mdpError) {
     console.error(catError || mdpError);
-    setEditVisiteurMessage((catError || mdpError).message || "Une erreur est survenue. Merci de réessayer.", "error");
+    setEditJoueurMessage((catError || mdpError).message || "Une erreur est survenue. Merci de réessayer.", "error");
     return;
   }
 
-  setEditVisiteurMessage("Compte mis à jour !", "success");
-  chargerVisiteurs();
-  setTimeout(closeEditVisiteurModal, 900);
+  setEditJoueurMessage("Compte mis à jour !", "success");
+  chargerJoueurs();
+  setTimeout(closeEditJoueurModal, 900);
 });
 
 // ---- Modale "Catégories" ----
@@ -626,7 +650,7 @@ async function chargerCategoriesModal() {
     <li class="account-item" data-id="${c.id}" data-nom="${c.nom}">
       <div class="account-item__info">
         <span class="account-item__name">${c.nom}</span>
-        <span class="account-item__date">${c.nb_visiteurs} visiteur${c.nb_visiteurs > 1 ? "s" : ""}</span>
+        <span class="account-item__date">${c.nb_joueurs} joueur${c.nb_joueurs > 1 ? "s" : ""}</span>
       </div>
       <div class="account-item__actions">
         <button type="button" class="account-action-btn" data-action="renommer" title="Renommer">${ICON_EDIT}</button>
@@ -705,7 +729,7 @@ categoriesList.addEventListener("click", async (event) => {
     }
     chargerCategoriesModal();
   } else if (btn.dataset.action === "supprimer") {
-    const confirme = confirm(`Supprimer la catégorie "${nom}" ? Les visiteurs qu'elle contient repasseront "sans catégorie".`);
+    const confirme = confirm(`Supprimer la catégorie "${nom}" ? Les joueurs qu'elle contient repasseront "sans catégorie".`);
     if (!confirme) return;
 
     const { error } = await supabase.rpc("supprimer_categorie", { p_id: id });
