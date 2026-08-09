@@ -19,15 +19,23 @@ if (identifiantLabel && identifiant) {
 }
 
 // ---- Configuration du puzzle ----
-const GRID_SIZE = 5;
+const GRID_SIZE = 6;
 const SYMBOL_POOL = ["1C", "55", "BD", "E9", "7A", "FF"];
-const BUFFER_SIZE = 6;
-const REQUIRED_LENGTH = 4;
+const BUFFER_SIZE = 8;
 const TIME_LIMIT = 45; // secondes
+
+// Trois paliers affichés. Seul celui marqué "required: true" déverrouille
+// réellement le tableau de bord — les deux autres sont des leurres
+// ("troll") : les reproduire ne fait rien de spécial pour l'instant.
+const DIFFICULTIES = [
+  { key: "facile", label: "SÉQUENCE FACILE", length: 3, required: false },
+  { key: "moyen", label: "SÉQUENCE MOYENNE", length: 4, required: false },
+  { key: "difficile", label: "SÉQUENCE DIFFICILE", length: 6, required: true },
+];
 
 const matrixEl = document.getElementById("matrix");
 const bufferRowEl = document.getElementById("buffer-row");
-const sequenceCodesEl = document.getElementById("sequence-codes");
+const sequenceListEl = document.getElementById("sequence-list");
 const timerFillEl = document.getElementById("timer-fill");
 const timerValueEl = document.getElementById("timer-value");
 const cancelBtn = document.getElementById("cancel-btn");
@@ -36,16 +44,79 @@ const resultCard = document.getElementById("result-card");
 const resultTitle = document.getElementById("result-title");
 const resultSub = document.getElementById("result-sub");
 const resultBtn = document.getElementById("result-btn");
+const toastEl = document.getElementById("toast");
 
 let grid = [];
-let requiredSequence = [];
+let sequences = {}; // key -> { ...difficulty, codes: [...], matched: bool, rowEl, chipEls }
 let picks = []; // { row, col }
 let cellButtons = []; // référence DOM indexée [row][col]
 let currentConstraint = null; // { type: "row" | "col", index }
 let timeRemaining = TIME_LIMIT;
 let timerIntervalId = null;
+let toastTimeoutId = null;
 let gameOver = false;
 
+// ---- Sons (générés via Web Audio, aucun fichier externe nécessaire) ----
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function unlockAudio() {
+  if (!AudioCtx) return;
+  if (!audioCtx) audioCtx = new AudioCtx();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+}
+document.addEventListener("pointerdown", unlockAudio, { once: true });
+
+function playTone({ freq = 700, duration = 0.05, type = "sine", gain = 0.04, slideTo = null }) {
+  if (!audioCtx || audioCtx.state !== "running") return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  if (slideTo !== null) {
+    osc.frequency.linearRampToValueAtTime(slideTo, now + duration);
+  }
+
+  gainNode.gain.setValueAtTime(0, now);
+  gainNode.gain.linearRampToValueAtTime(gain, now + 0.006);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+  osc.connect(gainNode).connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + duration + 0.03);
+}
+
+function playHoverSound() {
+  playTone({ freq: 640 + Math.random() * 90, duration: 0.045, type: "sine", gain: 0.03 });
+}
+function playSelectSound() {
+  playTone({ freq: 980, duration: 0.07, type: "square", gain: 0.045 });
+}
+function playSequenceMatchSound() {
+  playTone({ freq: 520, duration: 0.16, type: "sine", gain: 0.05, slideTo: 920 });
+}
+function playTrollSound() {
+  playTone({ freq: 650, duration: 0.22, type: "triangle", gain: 0.05, slideTo: 260 });
+}
+function playSuccessSound() {
+  playTone({ freq: 520, duration: 0.12, gain: 0.06 });
+  setTimeout(() => playTone({ freq: 760, duration: 0.12, gain: 0.06 }), 100);
+  setTimeout(() => playTone({ freq: 1080, duration: 0.2, gain: 0.07 }), 200);
+}
+function playFailSound() {
+  playTone({ freq: 320, duration: 0.4, type: "sawtooth", gain: 0.05, slideTo: 80 });
+}
+
+function showToast(text) {
+  toastEl.textContent = text;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimeoutId);
+  toastTimeoutId = setTimeout(() => toastEl.classList.remove("show"), 1600);
+}
+
+// ---- Génération de la grille et des séquences ----
 function randomSymbol() {
   return SYMBOL_POOL[Math.floor(Math.random() * SYMBOL_POOL.length)];
 }
@@ -65,8 +136,6 @@ function buildGrid() {
 // alternance) pour garantir qu'une solution existe dans la grille générée.
 function generateValidPath(length) {
   const path = [];
-  const usedInCol = {};
-  const usedInRow = {};
 
   let row = 0;
   let col = Math.floor(Math.random() * GRID_SIZE);
@@ -101,23 +170,33 @@ function generateValidPath(length) {
   return path;
 }
 
-function buildRequiredSequence() {
+// Construit les 3 séquences à partir d'un même parcours valide, ce qui
+// garantit que la séquence "difficile" (celle qui donne réellement accès)
+// est toujours atteignable. Les deux autres sont extraites du même
+// parcours par confort (donc souvent atteignables aussi), mais leur
+// réussite ne débloque rien pour l'instant.
+function buildSequences() {
   const path = generateValidPath(BUFFER_SIZE);
+  const requiredLength = Math.max(...DIFFICULTIES.map((d) => d.length));
 
-  // Sécurité : si jamais le parcours généré est trop court (grille
-  // exceptionnellement contrainte), on retente.
-  if (path.length < REQUIRED_LENGTH) {
-    return buildRequiredSequence();
+  if (path.length < requiredLength) {
+    return buildSequences();
   }
 
-  const maxStart = path.length - REQUIRED_LENGTH;
-  const start = Math.floor(Math.random() * (maxStart + 1));
-  const slice = path.slice(start, start + REQUIRED_LENGTH);
+  const result = {};
+  DIFFICULTIES.forEach((diff) => {
+    const maxStart = path.length - diff.length;
+    const start = Math.floor(Math.random() * (maxStart + 1));
+    const codes = path.slice(start, start + diff.length).map(({ row, col }) => grid[row][col]);
+    result[diff.key] = { ...diff, codes, matched: false, chipEls: [] };
+  });
 
-  return slice.map(({ row, col }) => grid[row][col]);
+  return result;
 }
 
+// ---- Rendu ----
 function renderMatrix() {
+  matrixEl.style.setProperty("--cols", GRID_SIZE);
   matrixEl.innerHTML = "";
   cellButtons = [];
 
@@ -132,6 +211,9 @@ function renderMatrix() {
       cell.className = "cell";
       cell.textContent = grid[r][c];
       cell.addEventListener("click", () => handleCellClick(r, c));
+      cell.addEventListener("mouseenter", () => {
+        if (cell.classList.contains("cell--selectable")) playHoverSound();
+      });
       rowEl.appendChild(cell);
       rowButtons.push(cell);
     }
@@ -155,14 +237,57 @@ function renderBuffer() {
   }
 }
 
-function renderSequence(progress) {
-  sequenceCodesEl.innerHTML = "";
-  requiredSequence.forEach((code, i) => {
-    const chip = document.createElement("div");
-    chip.className = "seq-chip";
-    if (i < progress) chip.classList.add("seq-chip--progress");
-    chip.textContent = code;
-    sequenceCodesEl.appendChild(chip);
+function renderSequenceList() {
+  sequenceListEl.innerHTML = "";
+
+  DIFFICULTIES.forEach((diff) => {
+    const seq = sequences[diff.key];
+
+    const row = document.createElement("div");
+    row.className = "sequence-row";
+
+    const dot = document.createElement("span");
+    dot.className = `diff-dot diff-dot--${diff.key}`;
+    row.appendChild(dot);
+
+    const codesWrap = document.createElement("div");
+    codesWrap.className = "sequence-row__codes";
+    seq.chipEls = [];
+    seq.codes.forEach((code) => {
+      const chip = document.createElement("div");
+      chip.className = "seq-chip";
+      chip.textContent = code;
+      codesWrap.appendChild(chip);
+      seq.chipEls.push(chip);
+    });
+    row.appendChild(codesWrap);
+
+    const text = document.createElement("div");
+    text.className = "sequence-row__text";
+    text.innerHTML = `
+      <span class="sequence-row__title">${diff.label}</span>
+      <span class="sequence-row__desc">Reproduisez cette séquence dans la matrice.</span>
+    `;
+    row.appendChild(text);
+
+    sequenceListEl.appendChild(row);
+    seq.rowEl = row;
+  });
+
+  updateSequenceChipStates();
+}
+
+function updateSequenceChipStates() {
+  DIFFICULTIES.forEach((diff) => {
+    const seq = sequences[diff.key];
+    if (seq.matched) {
+      seq.chipEls.forEach((chip) => chip.classList.add("seq-chip--done"));
+      return;
+    }
+    const progress = computeProgress(seq.codes);
+    seq.chipEls.forEach((chip, i) => {
+      chip.classList.toggle("seq-chip--progress", i < progress);
+    });
   });
 }
 
@@ -192,25 +317,21 @@ function updateSelectableCells() {
         selectable = r === currentConstraint.index;
       }
 
-      if (selectable) {
-        cell.classList.add("cell--selectable");
-      } else {
-        cell.classList.add("cell--used");
-      }
+      cell.classList.add(selectable ? "cell--selectable" : "cell--used");
     }
   }
 }
 
-// Vérifie si la séquence requise apparaît, dans l'ordre et de façon
+// Vérifie si une séquence donnée apparaît, dans l'ordre et de façon
 // contiguë, quelque part dans les coups déjà joués.
-function computeFullMatch() {
+function isSequenceMatched(codes) {
   const symbols = picks.map(({ row, col }) => grid[row][col]);
-  if (symbols.length < REQUIRED_LENGTH) return false;
+  if (symbols.length < codes.length) return false;
 
-  for (let start = 0; start <= symbols.length - REQUIRED_LENGTH; start++) {
+  for (let start = 0; start <= symbols.length - codes.length; start++) {
     let ok = true;
-    for (let i = 0; i < REQUIRED_LENGTH; i++) {
-      if (symbols[start + i] !== requiredSequence[i]) {
+    for (let i = 0; i < codes.length; i++) {
+      if (symbols[start + i] !== codes[i]) {
         ok = false;
         break;
       }
@@ -221,15 +342,15 @@ function computeFullMatch() {
 }
 
 // Longueur du plus long suffixe des coups joués qui correspond à un
-// préfixe de la séquence requise — sert uniquement à l'affichage de la
-// progression (glow progressif sur les puces de la séquence).
-function computeProgress() {
+// préfixe de la séquence donnée — sert uniquement à l'affichage de la
+// progression (glow progressif sur les puces).
+function computeProgress(codes) {
   const symbols = picks.map(({ row, col }) => grid[row][col]);
-  const maxLen = Math.min(symbols.length, REQUIRED_LENGTH);
+  const maxLen = Math.min(symbols.length, codes.length);
 
   for (let len = maxLen; len > 0; len--) {
     const suffix = symbols.slice(symbols.length - len);
-    const prefix = requiredSequence.slice(0, len);
+    const prefix = codes.slice(0, len);
     if (suffix.every((s, i) => s === prefix[i])) return len;
   }
   return 0;
@@ -256,20 +377,35 @@ function handleCellClick(row, col) {
     ? { type: "row", index: row }
     : { type: "col", index: col };
 
+  playSelectSound();
   renderBuffer();
   updateSelectableCells();
+  updateSequenceChipStates();
 
-  const progress = computeProgress();
-  renderSequence(progress);
+  checkMatches();
 
-  if (computeFullMatch()) {
-    endGame(true);
-    return;
-  }
-
-  if (picks.length >= BUFFER_SIZE) {
+  if (!gameOver && picks.length >= BUFFER_SIZE) {
     endGame(false);
   }
+}
+
+function checkMatches() {
+  DIFFICULTIES.forEach((diff) => {
+    const seq = sequences[diff.key];
+    if (seq.matched) return;
+    if (!isSequenceMatched(seq.codes)) return;
+
+    seq.matched = true;
+    updateSequenceChipStates();
+
+    if (diff.required) {
+      playSequenceMatchSound();
+      endGame(true);
+    } else {
+      playTrollSound();
+      showToast("… Rien ne se passe.");
+    }
+  });
 }
 
 // ---- Minuteur ----
@@ -306,11 +442,13 @@ function endGame(success) {
     resultTitle.textContent = "ACCÈS AUTORISÉ";
     resultSub.textContent = "Séquence validée. Ouverture du tableau de bord…";
     resultBtn.textContent = "Continuer";
+    playSuccessSound();
     sessionStorage.setItem("acces_verifie", "1");
   } else {
     resultTitle.textContent = "ÉCHEC DU PIRATAGE";
     resultSub.textContent = "La séquence n'a pas été validée à temps.";
     resultBtn.textContent = "Réessayer";
+    playFailSound();
   }
 
   resultOverlay.classList.add("open");
@@ -349,13 +487,14 @@ function startPuzzle() {
   currentConstraint = null;
   timeRemaining = TIME_LIMIT;
   resultOverlay.classList.remove("open");
+  toastEl.classList.remove("show");
 
   buildGrid();
-  requiredSequence = buildRequiredSequence();
+  sequences = buildSequences();
 
   renderMatrix();
   renderBuffer();
-  renderSequence(0);
+  renderSequenceList();
   updateSelectableCells();
 
   timerFillEl.style.width = "100%";
