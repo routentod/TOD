@@ -79,10 +79,11 @@ form.addEventListener("submit", async (event) => {
     // vers la bonne page.
     sessionStorage.setItem("identifiant", identifiant);
     sessionStorage.setItem("role", resultat.role);
+    sessionStorage.removeItem("acces_verifie"); // un nouveau login exige un nouveau piratage
     submitLabel.textContent = "Connecté ✓";
 
     if (resultat.role === "admin") {
-      window.location.href = "admin.html";
+      window.location.href = "hack.html";
     } else if (resultat.role === "visiteur") {
       window.location.href = "visiteur.html";
     }
