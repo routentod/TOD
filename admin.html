@@ -787,6 +787,84 @@ body {
   border: 1px solid rgba(255, 144, 144, 0.4);
 }
 
+.preuve-card {
+  font-family: var(--font-body);
+  text-align: left;
+}
+
+/* ---- Visionneuse plein écran (image en grand / vidéo avec contrôles) ---- */
+.lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 9, 26, 0.82);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  z-index: 60;
+}
+
+.lightbox-backdrop.open { opacity: 1; visibility: visible; }
+
+.lightbox {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 1000px);
+  max-height: 90vh;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  z-index: 61;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox.open { opacity: 1; visibility: visible; pointer-events: auto; }
+
+.lightbox__content {
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox__content img,
+.lightbox__content video {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 14px;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.7);
+  display: block;
+}
+
+.lightbox__close {
+  position: fixed;
+  top: 22px;
+  right: 26px;
+  z-index: 62;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass-bg-strong);
+  color: var(--ink);
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.lightbox__close svg { width: 18px; height: 18px; }
+.lightbox__close:hover { background: var(--glass-bg); }
+
 .modal-panel__subtitle {
   margin: -12px 0 14px;
   font-size: 12.5px;
@@ -1067,6 +1145,16 @@ body {
 
     <h3 class="preuve-section-title">Récap des joueurs</h3>
     <ul class="recap-list" id="recap-list"></ul>
+  </div>
+
+  <!-- Visionneuse (image en grand / vidéo avec contrôles) -->
+  <div class="lightbox-backdrop" id="lightbox-backdrop"></div>
+
+  <div class="lightbox" id="lightbox">
+    <button type="button" class="lightbox__close" id="lightbox-close" aria-label="Fermer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="lightbox__content" id="lightbox-content"></div>
   </div>
 
   <script type="module" src="admin.js"></script>
