@@ -765,6 +765,47 @@ body {
 
 .modal-submit-btn:disabled { opacity: 0.6; cursor: progress; }
 
+.modal-cancel-btn {
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.modal-cancel-btn:hover { background: var(--glass-bg-strong); }
+
+.modal-danger-btn {
+  padding: 13px 16px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ff9d9d 0%, #ff5c6a 100%);
+  color: #340a0a;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.confirm-modal-message {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+
 .modal-message { font-size: 13px; margin: 0; }
 .modal-message--error { color: #ff9090; }
 .modal-message--success { color: #8be6a8; }
@@ -1254,6 +1295,17 @@ body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <div class="lightbox__content" id="lightbox-content"></div>
+  </div>
+
+  <!-- Modale de confirmation générique (remplace les confirm() natifs) -->
+  <div class="modal-backdrop" id="confirm-modal-backdrop"></div>
+  <div class="modal-panel" id="confirm-modal" style="width:min(380px, 92vw);">
+    <h2 class="modal-panel__title" id="confirm-modal-title">Confirmer</h2>
+    <p class="confirm-modal-message" id="confirm-modal-message"></p>
+    <div class="confirm-modal-actions">
+      <button type="button" class="modal-cancel-btn" id="confirm-modal-cancel">Annuler</button>
+      <button type="button" class="modal-danger-btn" id="confirm-modal-ok">Supprimer</button>
+    </div>
   </div>
 
   <script src="https://www.youtube.com/iframe_api"></script>
