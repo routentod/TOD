@@ -19,6 +19,19 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   window.location.href = "index.html";
 });
 
+// ---- Horloge en temps réel ----
+const clockEl = document.getElementById("clock");
+
+function updateClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  clockEl.textContent = `${hh}:${mm}`;
+}
+
+updateClock();
+setInterval(updateClock, 1000 * 15);
+
 // ---- Éléments du DOM ----
 const defiTitreEl = document.getElementById("defi-titre");
 const defiMontantEl = document.getElementById("defi-montant");
