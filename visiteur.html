@@ -194,6 +194,20 @@ body {
   font-size: 14px;
 }
 
+.proof-echec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  background: rgba(255, 144, 144, 0.14);
+  border: 1px solid rgba(255, 144, 144, 0.4);
+  color: var(--danger);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+}
+
 .proof-panel {
   position: fixed;
   top: 50%;
@@ -392,6 +406,7 @@ body {
       <div class="proof-trigger" id="proof-trigger">
         <button class="cta" id="toggle-proof-btn" type="button">Ajouter ma preuve</button>
         <div class="proof-done" id="proof-done" hidden>✓ Preuve envoyée</div>
+        <div class="proof-echec" id="proof-echec" hidden>✕ Échec</div>
 
         <form class="proof-panel" id="proof-form">
           <div class="field">
@@ -435,6 +450,6 @@ body {
 
   <div class="proof-backdrop" id="proof-backdrop"></div>
 
-  <script type="module" src="visiteur.js?v=4"></script>
+  <script type="module" src="visiteur.js?v=5"></script>
 </body>
 </html>
