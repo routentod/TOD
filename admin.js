@@ -6,6 +6,46 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ---- Modale de confirmation générique (remplace confirm() natif) ----
+const confirmModal = document.getElementById("confirm-modal");
+const confirmModalBackdrop = document.getElementById("confirm-modal-backdrop");
+const confirmModalTitle = document.getElementById("confirm-modal-title");
+const confirmModalMessage = document.getElementById("confirm-modal-message");
+const confirmModalCancel = document.getElementById("confirm-modal-cancel");
+const confirmModalOk = document.getElementById("confirm-modal-ok");
+
+// Usage : if (await confirmerSuppression("Supprimer ce défi ?")) { ... }
+// Remplace directement un ancien `confirm("...")`.
+function confirmerSuppression(message, titre = "Confirmer la suppression") {
+  return new Promise((resolve) => {
+    confirmModalTitle.textContent = titre;
+    confirmModalMessage.textContent = message;
+    confirmModal.classList.add("open");
+    confirmModalBackdrop.classList.add("open");
+
+    function nettoyer(resultat) {
+      confirmModal.classList.remove("open");
+      confirmModalBackdrop.classList.remove("open");
+      confirmModalOk.removeEventListener("click", onOk);
+      confirmModalCancel.removeEventListener("click", onCancel);
+      confirmModalBackdrop.removeEventListener("click", onCancel);
+      document.removeEventListener("keydown", onKeydown);
+      resolve(resultat);
+    }
+
+    function onOk() { nettoyer(true); }
+    function onCancel() { nettoyer(false); }
+    function onKeydown(e) {
+      if (e.key === "Escape") nettoyer(false);
+    }
+
+    confirmModalOk.addEventListener("click", onOk);
+    confirmModalCancel.addEventListener("click", onCancel);
+    confirmModalBackdrop.addEventListener("click", onCancel);
+    document.addEventListener("keydown", onKeydown);
+  });
+}
+
 // ---- Garde d'accès basique ----
 // Vérifie que la session marquée par la page de connexion correspond bien
 // à un admin, ET que le protocole de piratage a été résolu. C'est une
@@ -229,7 +269,7 @@ document.getElementById("account-list").addEventListener("click", (event) => {
 });
 
 async function supprimerJoueur(identifiant) {
-  const confirme = confirm(`Supprimer le compte "${identifiant}" ? Cette action est irréversible.`);
+  const confirme = await confirmerSuppression(`Supprimer le compte "${identifiant}" ? Cette action est irréversible.`);
   if (!confirme) return;
 
   const { error } = await supabase.rpc("supprimer_visiteur", { p_identifiant: identifiant });
@@ -253,7 +293,7 @@ document.getElementById("timeline-list").addEventListener("click", async (event)
   const id = item?.dataset.id;
   if (!id) return;
 
-  const confirme = confirm("Supprimer ce défi ? Cette action est irréversible.");
+  const confirme = await confirmerSuppression("Supprimer ce défi ? Cette action est irréversible.");
   if (!confirme) return;
 
   const { error } = await supabase.rpc("supprimer_defi", { p_id: id });
@@ -739,7 +779,7 @@ categoriesList.addEventListener("click", async (event) => {
     }
     chargerCategoriesModal();
   } else if (btn.dataset.action === "supprimer") {
-    const confirme = confirm(`Supprimer la catégorie "${nom}" ? Les joueurs qu'elle contient repasseront "sans catégorie".`);
+    const confirme = await confirmerSuppression(`Supprimer la catégorie "${nom}" ? Les joueurs qu'elle contient repasseront "sans catégorie".`);
     if (!confirme) return;
 
     const { error } = await supabase.rpc("supprimer_categorie", { p_id: id });
