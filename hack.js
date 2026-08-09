@@ -417,6 +417,10 @@ function startTimer() {
     timerValueEl.textContent = timeRemaining.toFixed(2);
     timerFillEl.style.width = `${(timeRemaining / TIME_LIMIT) * 100}%`;
 
+    const critical = timeRemaining <= 10;
+    timerFillEl.classList.toggle("timer-bar__fill--warning", critical);
+    timerValueEl.classList.toggle("timer-value--warning", critical);
+
     if (timeRemaining <= 0) {
       endGame(false);
     }
@@ -445,7 +449,7 @@ function endGame(success) {
     playSuccessSound();
     sessionStorage.setItem("acces_verifie", "1");
   } else {
-    resultTitle.textContent = "ÉCHEC DU PIRATAGE";
+    resultTitle.textContent = "ÉCHEC DE L'AUTHENTIFICATION";
     resultSub.textContent = "La séquence n'a pas été validée à temps.";
     resultBtn.textContent = "Réessayer";
     playFailSound();
@@ -498,6 +502,8 @@ function startPuzzle() {
   updateSelectableCells();
 
   timerFillEl.style.width = "100%";
+  timerFillEl.classList.remove("timer-bar__fill--warning");
+  timerValueEl.classList.remove("timer-value--warning");
   timerValueEl.textContent = TIME_LIMIT.toFixed(2);
 
   startTimer();
