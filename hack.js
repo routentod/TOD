@@ -7,11 +7,12 @@ if (role !== "admin") {
   window.location.href = "index.html";
 }
 
-// Si l'accès a déjà été validé (ex : retour arrière du navigateur après
-// résolution), on ne fait pas refaire le puzzle.
-if (sessionStorage.getItem("acces_verifie") === "1") {
-  window.location.href = "admin.html";
-}
+// L'épreuve doit être refaite à CHAQUE ouverture de cette page, même si
+// l'accès avait déjà été validé lors d'une précédente visite dans la
+// même session : on invalide donc systématiquement le flag ici, et le
+// tableau de bord (admin.html) ne doit se fier qu'à ce flag mis à jour
+// après résolution du puzzle plus bas.
+sessionStorage.setItem("acces_verifie", "0");
 
 const identifiantLabel = document.getElementById("identifiant-label");
 if (identifiantLabel && identifiant) {
