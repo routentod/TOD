@@ -791,12 +791,17 @@ async function ouvrirPreuvesModal(defiId, titre) {
       const media = j.image_url
         ? `<img class="preuve-card__media" src="${j.image_url}" alt="Preuve de ${j.identifiant}">`
         : `<span class="preuve-card__media preuve-card__media--lien">${ICON_LINK}</span>`;
-      const href = j.image_url || j.lien_media;
       return `
-        <a class="preuve-card" href="${href}" target="_blank" rel="noopener noreferrer">
+        <button
+          type="button"
+          class="preuve-card"
+          data-image="${j.image_url || ""}"
+          data-video="${j.image_url ? "" : (j.lien_media || "")}"
+          data-nom="${j.identifiant}"
+        >
           ${media}
           <span class="preuve-card__nom">${j.identifiant}</span>
-        </a>
+        </button>
       `;
     }).join("");
   }
@@ -816,3 +821,53 @@ async function ouvrirPreuvesModal(defiId, titre) {
     </li>
   `).join("");
 }
+
+// ---- Visionneuse plein écran (image en grand / vidéo avec contrôles natifs) ----
+const lightboxBackdrop = document.getElementById("lightbox-backdrop");
+const lightbox = document.getElementById("lightbox");
+const lightboxContent = document.getElementById("lightbox-content");
+const lightboxCloseBtn = document.getElementById("lightbox-close");
+
+function closeLightbox() {
+  lightbox.classList.remove("open");
+  lightboxBackdrop.classList.remove("open");
+  // On vide le contenu pour couper le son/la lecture d'une éventuelle vidéo.
+  lightboxContent.innerHTML = "";
+}
+
+function openLightboxImage(url, alt) {
+  lightboxContent.innerHTML = `<img src="${url}" alt="${alt}">`;
+  lightbox.classList.add("open");
+  lightboxBackdrop.classList.add("open");
+}
+
+function openLightboxVideo(url) {
+  // Lecture native : l'utilisateur a play/pause, avance/recul et le volume
+  // directement via les contrôles du navigateur.
+  lightboxContent.innerHTML = `
+    <video src="${url}" controls autoplay playsinline></video>
+  `;
+  lightbox.classList.add("open");
+  lightboxBackdrop.classList.add("open");
+}
+
+preuveGrid.addEventListener("click", (event) => {
+  const card = event.target.closest(".preuve-card");
+  if (!card) return;
+
+  const image = card.dataset.image;
+  const video = card.dataset.video;
+  const nom = card.dataset.nom;
+
+  if (image) {
+    openLightboxImage(image, `Preuve de ${nom}`);
+  } else if (video) {
+    openLightboxVideo(video);
+  }
+});
+
+lightboxCloseBtn.addEventListener("click", closeLightbox);
+lightboxBackdrop.addEventListener("click", closeLightbox);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeLightbox();
+});
