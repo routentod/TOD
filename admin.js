@@ -879,3 +879,67 @@ lightboxBackdrop.addEventListener("click", closeLightbox);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeLightbox();
 });
+
+// ---- Musique de fond (lecteur YouTube officiel, en arrière-plan) ----
+// On ne peut pas héberger le fichier audio directement (droits d'auteur) :
+// on passe par le lecteur intégré YouTube, invisible (1x1px), piloté par
+// les boutons play/pause et le curseur de volume déjà présents dans le HTML.
+const YT_VIDEO_ID = "dn7vecJv3ro";
+
+const musicToggleBtn = document.getElementById("music-toggle-btn");
+const musicIconPlay = document.getElementById("music-icon-play");
+const musicIconPause = document.getElementById("music-icon-pause");
+const musicVolumeInput = document.getElementById("music-volume");
+
+let ytPlayer = null;
+let ytReady = false;
+let musicEnPause = true;
+
+// Appelée automatiquement par l'API YouTube dès qu'elle est chargée
+// (le <script src="https://www.youtube.com/iframe_api"> dans admin.html
+// cherche cette fonction globale par convention).
+window.onYouTubeIframeAPIReady = function () {
+  ytPlayer = new YT.Player("yt-player", {
+    videoId: YT_VIDEO_ID,
+    playerVars: {
+      autoplay: 0,
+      controls: 0,
+      loop: 1,
+      playlist: YT_VIDEO_ID, // nécessaire pour que "loop" fonctionne sur une seule vidéo
+      disablekb: 1,
+      fs: 0,
+      modestbranding: 1,
+    },
+    events: {
+      onReady: () => {
+        ytReady = true;
+        ytPlayer.setVolume(Number(musicVolumeInput.value));
+      },
+    },
+  });
+};
+
+function setMusicIcon(enLecture) {
+  musicIconPlay.style.display = enLecture ? "none" : "block";
+  musicIconPause.style.display = enLecture ? "block" : "none";
+  musicToggleBtn.setAttribute("aria-label", enLecture ? "Mettre en pause" : "Lancer la musique");
+}
+
+musicToggleBtn.addEventListener("click", () => {
+  if (!ytReady) return; // l'API n'a pas fini de charger, on ignore le clic
+
+  if (musicEnPause) {
+    ytPlayer.playVideo();
+    musicEnPause = false;
+  } else {
+    ytPlayer.pauseVideo();
+    musicEnPause = true;
+  }
+  setMusicIcon(!musicEnPause);
+});
+
+musicVolumeInput.addEventListener("input", () => {
+  if (ytReady) {
+    ytPlayer.setVolume(Number(musicVolumeInput.value));
+  }
+});
