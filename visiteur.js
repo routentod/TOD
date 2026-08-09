@@ -35,6 +35,7 @@ const formMessage = document.getElementById("form-message");
 
 let dureeSecondes = 0;
 let lanceLe = null;
+let defiFinTimestamp = null; // instant (ms) où le défi actuel se termine, pour bloquer l'envoi hors délai
 let imageFile = null; // Blob de l'image collée, prête à être uploadée
 let preuveEnvoyee = false; // état courant, mis à jour à chaque changement d'affichage
 
@@ -117,12 +118,21 @@ function demarrerTimer() {
 
   const debut = new Date(lanceLe).getTime();
   const fin = debut + dureeSecondes * 1000;
+  defiFinTimestamp = fin;
+
+  // Déclaré ici (et non via "const intervalId = setInterval(...)" placé
+  // après l'appel à tick()) pour éviter un bug : si le défi est déjà
+  // terminé au chargement, tick() atteint tout de suite la branche
+  // "restant <= 0" et tentait d'appeler clearInterval(intervalId) avant
+  // que la constante ne soit initialisée, ce qui plantait silencieusement
+  // et laissait le bouton "Ajouter ma preuve" affiché au lieu de "Échec".
+  let intervalId = null;
 
   function tick() {
     const restant = Math.max(0, Math.round((fin - Date.now()) / 1000));
     timerEl.textContent = formatTemps(restant);
     if (restant <= 0) {
-      clearInterval(intervalId);
+      if (intervalId !== null) clearInterval(intervalId);
       timerEl.textContent = "Défi terminé";
       timerEl.classList.add("timer--attente");
 
@@ -136,7 +146,7 @@ function demarrerTimer() {
   }
 
   tick();
-  const intervalId = setInterval(tick, 1000);
+  intervalId = setInterval(tick, 1000);
 }
 
 // ---- Ouverture / fermeture du formulaire de preuve ----
@@ -196,6 +206,13 @@ proofForm.addEventListener("submit", async (event) => {
   setFormMessage(null);
 
   const lien = proofLienInput.value.trim();
+
+  if (defiFinTimestamp !== null && Date.now() >= defiFinTimestamp) {
+    setFormMessage("Le temps est écoulé pour ce défi.", "error");
+    closeProofForm();
+    afficherEchec();
+    return;
+  }
 
   if (!lien && !imageFile) {
     setFormMessage("Ajoutez au moins un lien vidéo ou une image.", "error");
