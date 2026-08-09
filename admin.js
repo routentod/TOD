@@ -8,14 +8,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ---- Garde d'accès basique ----
 // Vérifie que la session marquée par la page de connexion correspond bien
-// à un admin, ET que le protocole de piratage vient d'être résolu.
-// Le flag "acces_verifie" est à USAGE UNIQUE : dès qu'on arrive ici avec
-// la preuve fraîche que le puzzle vient d'être résolu, on la consomme
-// immédiatement (remise à "0"). Ainsi le mot de passe reste enregistré
-// pour la session (identifiant/role), mais toute nouvelle visite ou tout
-// rechargement de cette page renvoie systématiquement vers hack.html.
-// C'est une protection côté client seulement (facile à contourner) : elle
-// évite juste d'afficher la page par erreur ou par navigation directe.
+// à un admin, ET que le protocole de piratage a été résolu. C'est une
+// protection côté client seulement (facile à contourner) : elle évite
+// juste d'afficher la page par erreur ou par navigation directe.
 // Si vous avez déjà une vraie session serveur, remplacez ce bloc par une
 // vérification côté serveur (cookie de session, etc.).
 const role = sessionStorage.getItem("role");
@@ -23,8 +18,6 @@ if (role !== "admin") {
   window.location.href = "index.html";
 } else if (sessionStorage.getItem("acces_verifie") !== "1") {
   window.location.href = "hack.html";
-} else {
-  sessionStorage.setItem("acces_verifie", "0");
 }
 
 // ---- Horloge en temps réel ----
@@ -74,7 +67,11 @@ async function chargerClassement() {
     <li class="rank-item">
       <span class="rank-item__pos">${i + 1}</span>
       <span class="rank-item__name">${row.identifiant}</span>
-      <span class="rank-item__score">${row.nb_actions} action${row.nb_actions > 1 ? "s" : ""}</span>
+      <span class="rank-item__meta">
+        <span class="rank-item__score">${row.nb_actions} action${row.nb_actions > 1 ? "s" : ""}</span>
+        <span class="rank-item__dot"></span>
+        <span class="rank-item__montant">${Math.round(row.argent_gagne || 0)}$</span>
+      </span>
     </li>
   `).join("");
 }
