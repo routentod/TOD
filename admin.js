@@ -8,13 +8,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ---- Garde d'accès basique ----
 // Vérifie que la session marquée par la page de connexion correspond bien
-// à un admin. C'est une protection côté client seulement (facile à
-// contourner) : elle évite juste d'afficher la page par erreur.
+// à un admin, ET que le protocole de piratage a été résolu. C'est une
+// protection côté client seulement (facile à contourner) : elle évite
+// juste d'afficher la page par erreur ou par navigation directe.
 // Si vous avez déjà une vraie session serveur, remplacez ce bloc par une
 // vérification côté serveur (cookie de session, etc.).
 const role = sessionStorage.getItem("role");
 if (role !== "admin") {
   window.location.href = "index.html";
+} else if (sessionStorage.getItem("acces_verifie") !== "1") {
+  window.location.href = "hack.html";
 }
 
 // ---- Horloge en temps réel ----
@@ -34,6 +37,7 @@ setInterval(updateClock, 1000 * 15);
 document.getElementById("logout-btn").addEventListener("click", () => {
   sessionStorage.removeItem("identifiant");
   sessionStorage.removeItem("role");
+  sessionStorage.removeItem("acces_verifie");
   window.location.href = "index.html";
 });
 
