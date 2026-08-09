@@ -30,163 +30,13 @@ const proofForm = document.getElementById("proof-form");
 const proofTitreInput = document.getElementById("proof-titre");
 const proofLienInput = document.getElementById("proof-lien");
 const pasteZone = document.getElementById("paste-zone");
-const mapHint = document.getElementById("map-hint");
 const submitProofBtn = document.getElementById("submit-proof-btn");
 const formMessage = document.getElementById("form-message");
 
 let dureeSecondes = 0;
 let lanceLe = null;
 let imageFile = null; // Blob de l'image collée, prête à être uploadée
-let lieuLat = null;
-let lieuLng = null;
-let map = null;
-let marker = null;
 let preuveEnvoyee = false; // état courant, mis à jour à chaque changement d'affichage
-
-// ---- Configuration de la carte GTA V (reprise de map.html) ----
-const MAP_TILE_SIZE = 256;
-const MAP_MIN_ZOOM = -2;
-const MAP_MAX_ZOOM = 5;
-const MAP_TILES_AT_MAX_ZOOM = 32;
-
-const MAP_STYLES = {
-  atlas: "mapStyles/styleAtlas/{z}/{x}/{y}.jpg",
-  satellite: "mapStyles/styleSatelite/{z}/{x}/{y}.jpg",
-};
-
-const MAP_STYLE_BG = {
-  atlas: "#0FA8D2",
-  satellite: "#153E6A",
-};
-
-const MAP_PLACES = {
-  "los santos": { x: 115, y: -197 }, "vinewood": { x: 125, y: -170 },
-  "vinewood hills": { x: 111, y: -154 }, "richman": { x: 88, y: -171 },
-  "rockford hills": { x: 101, y: -179 }, "place des cubes": { x: 122, y: -192 },
-  "pillbox hill": { x: 120, y: -187 }, "little seoul": { x: 105, y: -192 },
-  "la mesa": { x: 133, y: -194 }, "el burro heights": { x: 145, y: -207 },
-  "cypress flats": { x: 136, y: -224 }, "pont rouge": { x: 133, y: -227 },
-  "pont vert": { x: 108, y: -220 }, "terminal": { x: 137, y: -239 },
-  "port de los santos": { x: 117, y: -225 }, "del perro": { x: 84, y: -188 },
-  "fete forraine": { x: 84, y: -194 }, "vespucci": { x: 96, y: -185 },
-  "vespucci beach": { x: 88, y: -204 }, "marina": { x: 99, y: -202 },
-  "morningwood": { x: 89, y: -178 }, "hawick": { x: 124, y: -178 },
-  "davis": { x: 124, y: -205 }, "strawberry": { x: 117, y: -206 },
-  "champs petrole": { x: 148, y: -217 }, "rancho": { x: 124, y: -215 },
-  "mirror park": { x: 140, y: -184 }, "golf": { x: 92, y: -171 },
-  "cimetiere": { x: 82, y: -171 }, "eclipse": { x: 102, y: -168 },
-  "spanish avenue": { x: 115, y: -171 }, "harmony": { x: 125, y: -114 },
-  "sandy shores": { x: 153, y: -96 }, "grapeseed": { x: 161, y: -71 },
-  "paleto": { x: 114, y: -42 }, "mont chiliad": { x: 128, y: -59 },
-  "aérodrome sandy shores": { x: 145, y: -109 }, "fort zancudo": { x: 74, y: -108 },
-  "marécages": { x: 76, y: -120 }, "chumash": { x: 52, y: -153 },
-  "banham canyon": { x: 69, y: -149 }, "tongva hills": { x: 69, y: -132 },
-  "mont josiah": { x: 96, y: -98 }, "stab city": { x: 119, y: -97 },
-  "lac de sandy shores": { x: 141, y: -89 }, "mount gordo": { x: 175, y: -49 },
-  "mine": { x: 176, y: -114 }, "palmer station": { x: 175, y: -141 },
-  "plage alcatraz": { x: 175, y: -187 }, "aéroport": { x: 115, y: -171 },
-};
-
-let mapCurrentLayer = null;
-const mapLayerCache = {};
-
-function loadMapStyle(styleKey) {
-  if (mapCurrentLayer) map.removeLayer(mapCurrentLayer);
-
-  if (!mapLayerCache[styleKey]) {
-    mapLayerCache[styleKey] = L.tileLayer(MAP_STYLES[styleKey], {
-      tileSize: MAP_TILE_SIZE,
-      minZoom: MAP_MIN_ZOOM,
-      maxZoom: MAP_MAX_ZOOM,
-      noWrap: true,
-      errorTileUrl: "",
-    });
-  }
-  mapCurrentLayer = mapLayerCache[styleKey];
-  mapCurrentLayer.addTo(map);
-
-  document.getElementById("map").style.background = MAP_STYLE_BG[styleKey];
-
-  document.querySelectorAll(".map-style-btn").forEach((b) => {
-    b.classList.toggle("active", b.dataset.style === styleKey);
-  });
-}
-
-function mapSearch() {
-  const raw = document.getElementById("map-search").value.trim();
-  if (!raw) return;
-
-  const coordMatch = raw.match(/^(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)$/);
-  if (coordMatch) {
-    const x = parseFloat(coordMatch[1]);
-    const y = parseFloat(coordMatch[3]);
-    map.setView([y, x], MAP_MAX_ZOOM);
-    return;
-  }
-
-  const key = raw.toLowerCase();
-  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const wordBoundaryRegex = new RegExp("(^|\\s)" + escapedKey);
-  const matchKey = Object.keys(MAP_PLACES).find((name) => wordBoundaryRegex.test(name));
-  if (matchKey) {
-    const p = MAP_PLACES[matchKey];
-    map.setView([p.y, p.x], MAP_MAX_ZOOM);
-  }
-}
-
-// ---- Carte pour sélectionner le lieu du défi ----
-function initMap() {
-  if (map) return; // déjà initialisée
-
-  map = L.map("map", {
-    crs: L.CRS.Simple,
-    minZoom: MAP_MIN_ZOOM,
-    maxZoom: MAP_MAX_ZOOM,
-    zoomControl: true,
-    attributionControl: false,
-  });
-
-  loadMapStyle("atlas");
-
-  const mapPixelSize = MAP_TILE_SIZE * MAP_TILES_AT_MAX_ZOOM;
-  const southWest = map.unproject([0, mapPixelSize], MAP_MAX_ZOOM);
-  const northEast = map.unproject([mapPixelSize, 0], MAP_MAX_ZOOM);
-  const fullBounds = L.latLngBounds(southWest, northEast);
-
-  map.setMaxBounds(fullBounds);
-  // On évite fitBounds() ici : dans ce petit conteneur (200px de haut), il
-  // calculerait un zoom hors de la plage couverte par les tuiles (0 à 5),
-  // ce qui affichait juste le fond bleu. On centre plutôt à un zoom fixe
-  // qui existe vraiment.
-  map.setView(fullBounds.getCenter(), 0);
-
-  map.on("click", (event) => {
-    lieuLat = event.latlng.lat;
-    lieuLng = event.latlng.lng;
-
-    if (marker) {
-      marker.setLatLng(event.latlng);
-    } else {
-      marker = L.marker(event.latlng).addTo(map);
-    }
-
-    mapHint.textContent = `Lieu sélectionné (x: ${Math.round(lieuLng)}, y: ${Math.round(lieuLat)})`;
-    mapHint.classList.add("map-hint--ok");
-  });
-
-  document.querySelectorAll(".map-style-btn").forEach((btn) => {
-    btn.addEventListener("click", () => loadMapStyle(btn.dataset.style));
-  });
-
-  document.getElementById("map-search").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      mapSearch();
-    }
-  });
-
-  setTimeout(() => map.invalidateSize(), 200);
-}
 
 function afficherPreuveDejaEnvoyee() {
   toggleProofBtn.style.display = "none";
@@ -297,7 +147,6 @@ const proofBackdrop = document.getElementById("proof-backdrop");
 function openProofForm() {
   proofForm.classList.add("open");
   proofBackdrop.classList.add("open");
-  initMap();
 }
 
 function closeProofForm() {
@@ -348,11 +197,6 @@ proofForm.addEventListener("submit", async (event) => {
 
   const lien = proofLienInput.value.trim();
 
-  if (lieuLat === null || lieuLng === null) {
-    setFormMessage("Merci d'indiquer le lieu du défi sur la carte.", "error");
-    return;
-  }
-
   if (!lien && !imageFile) {
     setFormMessage("Ajoutez au moins un lien vidéo ou une image.", "error");
     return;
@@ -385,8 +229,8 @@ proofForm.addEventListener("submit", async (event) => {
       p_identifiant: identifiant,
       p_lien_media: lien || null,
       p_image_url: imageUrl,
-      p_latitude: lieuLat,
-      p_longitude: lieuLng,
+      p_latitude: null,
+      p_longitude: null,
     });
 
     if (rpcError) throw rpcError;
