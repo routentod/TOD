@@ -1042,6 +1042,12 @@ body {
           </button>
           <input type="range" id="music-volume" class="music-volume" min="0" max="100" value="35" aria-label="Volume de la musique">
         </div>
+        <!-- Lecteur YouTube discret (1x1px), piloté par les contrôles ci-dessus.
+             On ne peut pas héberger l'audio directement (droits d'auteur) :
+             on passe par le lecteur officiel YouTube en arrière-plan. -->
+        <div id="yt-player-container" style="position:fixed; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none;">
+          <div id="yt-player"></div>
+        </div>
         <div id="clock" class="clock">--:--</div>
         <button id="logout-btn" class="logout-btn" type="button">Déconnexion</button>
       </div>
@@ -1250,6 +1256,7 @@ body {
     <div class="lightbox__content" id="lightbox-content"></div>
   </div>
 
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script type="module" src="admin.js"></script>
   <script>
     // ---- Menu hamburger responsive (topbar) ----
