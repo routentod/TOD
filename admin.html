@@ -52,6 +52,7 @@ body {
 
 /* ---- Barre du haut ---- */
 .topbar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -119,6 +120,70 @@ body {
 
 .logout-btn:hover { filter: brightness(1.05); }
 .logout-btn:active { transform: translateY(1px); }
+
+/* ---- Bouton menu (hamburger), affiché seulement en largeur réduite ---- */
+.topbar-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg);
+  color: var(--ink);
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.topbar-menu-btn:hover { background: var(--glass-bg-strong); }
+.topbar-menu-btn:active { transform: translateY(1px); }
+.topbar-menu-btn svg { width: 19px; height: 19px; }
+
+@media (max-width: 760px) {
+  .topbar-menu-btn { display: flex; }
+
+  /* Les boutons ne disparaissent pas : ils passent en liste déroulante,
+     ancrée sous le bouton menu, masquée tant qu'elle n'est pas ouverte. */
+  .topbar__right {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 50;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 220px;
+    padding: 14px;
+    border-radius: 16px;
+    background: var(--glass-bg-strong);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-6px);
+    transition: opacity 0.16s ease, visibility 0.16s ease, transform 0.16s ease;
+  }
+
+  .topbar__right.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .topbar__right .clock,
+  .topbar__right .new-defi-btn,
+  .topbar__right .logout-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
 
 /* ---- Layout 3 colonnes : 1.5 / 2 / 1.5 ---- */
 .board {
@@ -691,13 +756,21 @@ body {
         <img src="logo admin.png" alt="Logo">
         <span>Espace admin</span>
       </div>
-      <div class="topbar__right">
+      <div class="topbar__right" id="topbar-right">
         <div id="clock" class="clock">--:--</div>
         <button id="new-joueur-btn" class="new-defi-btn" type="button">+ Nouveau joueur</button>
         <button id="categories-btn" class="new-defi-btn" type="button">Catégories</button>
         <button id="new-defi-btn" class="new-defi-btn" type="button">+ Nouveau défi</button>
         <button id="logout-btn" class="logout-btn" type="button">Déconnexion</button>
       </div>
+
+      <button id="topbar-menu-btn" class="topbar-menu-btn" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="topbar-right">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="7" x2="20" y2="7"></line>
+          <line x1="4" y1="12" x2="20" y2="12"></line>
+          <line x1="4" y1="17" x2="20" y2="17"></line>
+        </svg>
+      </button>
     </div>
 
     <div class="board">
@@ -872,5 +945,49 @@ body {
   </div>
 
   <script type="module" src="admin.js"></script>
+  <script>
+    // ---- Menu hamburger responsive (topbar) ----
+    (function () {
+      const menuBtn = document.getElementById("topbar-menu-btn");
+      const rightMenu = document.getElementById("topbar-right");
+
+      function closeMenu() {
+        rightMenu.classList.remove("open");
+        menuBtn.setAttribute("aria-expanded", "false");
+      }
+
+      function toggleMenu() {
+        const isOpen = rightMenu.classList.toggle("open");
+        menuBtn.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      menuBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleMenu();
+      });
+
+      // Clic sur un des boutons du menu : on referme après l'action.
+      rightMenu.addEventListener("click", (event) => {
+        if (event.target.closest("button")) closeMenu();
+      });
+
+      // Clic en dehors du menu : fermeture.
+      document.addEventListener("click", (event) => {
+        if (!rightMenu.contains(event.target) && event.target !== menuBtn) {
+          closeMenu();
+        }
+      });
+
+      // Touche Échap : fermeture.
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeMenu();
+      });
+
+      // Repasse en affichage normal (boutons visibles) si on repasse en grand écran.
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 760) closeMenu();
+      });
+    })();
+  </script>
 </body>
 </html>
