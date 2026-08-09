@@ -145,6 +145,7 @@ const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const ICON_TRASH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>`;
 
 const ICON_CLOSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+const ICON_LINK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
 
 async function chargerComptesParCategorie() {
   const list = document.getElementById("account-list");
@@ -256,6 +257,17 @@ document.getElementById("timeline-list").addEventListener("click", async (event)
   }
 
   chargerDefis();
+});
+
+// ---- Ouverture de la galerie / récap au clic sur un défi ----
+document.getElementById("timeline-list").addEventListener("click", (event) => {
+  if (event.target.closest('[data-action="delete-defi"]')) return;
+
+  const item = event.target.closest(".defi-item");
+  if (!item || !item.dataset.id) return;
+
+  const titre = item.querySelector(".defi-item__titre")?.textContent || "Défi";
+  ouvrirPreuvesModal(item.dataset.id, titre);
 });
 
 // ---- Modale "Nouveau défi" ----
@@ -731,3 +743,76 @@ categoriesList.addEventListener("click", async (event) => {
     chargerCategoriesModal();
   }
 });
+
+// ---- Modale "Galerie & récap" d'un défi ----
+const preuvesModal = document.getElementById("preuves-modal");
+const preuvesModalBackdrop = document.getElementById("preuves-modal-backdrop");
+const preuvesModalTitre = document.getElementById("preuves-modal-titre");
+const preuveGrid = document.getElementById("preuve-grid");
+const preuveEmpty = document.getElementById("preuve-empty");
+const recapList = document.getElementById("recap-list");
+
+function closePreuvesModal() {
+  preuvesModal.classList.remove("open");
+  preuvesModalBackdrop.classList.remove("open");
+}
+
+preuvesModalBackdrop.addEventListener("click", closePreuvesModal);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closePreuvesModal();
+});
+
+async function ouvrirPreuvesModal(defiId, titre) {
+  preuvesModalTitre.textContent = titre;
+  preuveGrid.innerHTML = "";
+  preuveEmpty.hidden = true;
+  recapList.innerHTML = `<li class="recap-item">Chargement...</li>`;
+
+  preuvesModal.classList.add("open");
+  preuvesModalBackdrop.classList.add("open");
+
+  const { data, error } = await supabase.rpc("get_preuves_defi", { p_defi_id: defiId });
+
+  if (error) {
+    console.error(error);
+    recapList.innerHTML = `<li class="recap-item">Impossible de charger les preuves de ce défi.</li>`;
+    return;
+  }
+
+  const joueurs = data || [];
+
+  // ---- Galerie : uniquement les joueurs ayant envoyé un média ----
+  const avecMedia = joueurs.filter((j) => j.image_url || j.lien_media);
+
+  if (avecMedia.length === 0) {
+    preuveEmpty.hidden = false;
+  } else {
+    preuveGrid.innerHTML = avecMedia.map((j) => {
+      const media = j.image_url
+        ? `<img class="preuve-card__media" src="${j.image_url}" alt="Preuve de ${j.identifiant}">`
+        : `<span class="preuve-card__media preuve-card__media--lien">${ICON_LINK}</span>`;
+      const href = j.image_url || j.lien_media;
+      return `
+        <a class="preuve-card" href="${href}" target="_blank" rel="noopener noreferrer">
+          ${media}
+          <span class="preuve-card__nom">${j.identifiant}</span>
+        </a>
+      `;
+    }).join("");
+  }
+
+  // ---- Récap : tous les joueurs concernés par le défi ----
+  if (joueurs.length === 0) {
+    recapList.innerHTML = `<li class="recap-item">Aucun joueur concerné par ce défi.</li>`;
+    return;
+  }
+
+  recapList.innerHTML = joueurs.map((j) => `
+    <li class="recap-item">
+      <span>${j.identifiant}</span>
+      <span class="recap-item__badge ${j.a_envoye ? "recap-item__badge--ok" : "recap-item__badge--manquant"}">
+        ${j.a_envoye ? "✓ Envoyée" : "✕ Manquante"}
+      </span>
+    </li>
+  `).join("");
+}
