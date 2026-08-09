@@ -90,11 +90,32 @@ body {
   align-items: center;
 }
 
-.logout-btn {
+.topbar-visiteur {
   position: fixed;
   top: 20px;
   right: 20px;
   z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clock {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--glass-bg);
+  border: 1px solid var(--field-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 9px 16px;
+  border-radius: 999px;
+  min-width: 66px;
+  text-align: center;
+}
+
+.logout-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -334,7 +355,10 @@ body {
 </head>
 <body>
 
-  <button id="logout-btn" class="logout-btn" type="button">Déconnexion</button>
+  <div class="topbar-visiteur">
+    <div id="clock" class="clock">--:--</div>
+    <button id="logout-btn" class="logout-btn" type="button">Déconnexion</button>
+  </div>
 
   <div class="scene">
     <main class="panel" role="main">
