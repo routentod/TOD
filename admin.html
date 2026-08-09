@@ -100,6 +100,67 @@ body {
   text-align: center;
 }
 
+.music-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 8px 14px 8px 10px;
+  border-radius: 999px;
+}
+
+.music-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.music-toggle-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.music-toggle-btn svg { width: 13px; height: 13px; }
+
+.music-volume {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 72px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+}
+
+.music-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--metal-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.music-volume::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border: none;
+  border-radius: 50%;
+  background: var(--metal-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
 .logout-btn {
   display: flex;
   align-items: center;
@@ -180,6 +241,7 @@ body {
 
   .topbar__right .clock,
   .topbar__right .new-defi-btn,
+  .topbar__right .music-control,
   .topbar__right .logout-btn {
     width: 100%;
     justify-content: center;
@@ -970,10 +1032,17 @@ body {
         <span>Espace admin</span>
       </div>
       <div class="topbar__right" id="topbar-right">
-        <div id="clock" class="clock">--:--</div>
         <button id="new-joueur-btn" class="new-defi-btn" type="button">+ Nouveau joueur</button>
         <button id="categories-btn" class="new-defi-btn" type="button">Catégories</button>
         <button id="new-defi-btn" class="new-defi-btn" type="button">+ Nouveau défi</button>
+        <div class="music-control" id="music-control">
+          <button id="music-toggle-btn" class="music-toggle-btn" type="button" aria-label="Lancer la musique">
+            <svg id="music-icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+            <svg id="music-icon-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          </button>
+          <input type="range" id="music-volume" class="music-volume" min="0" max="100" value="35" aria-label="Volume de la musique">
+        </div>
+        <div id="clock" class="clock">--:--</div>
         <button id="logout-btn" class="logout-btn" type="button">Déconnexion</button>
       </div>
 
