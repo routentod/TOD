@@ -7,8 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root {
   --bg-deep: #12183c;
@@ -306,63 +304,6 @@ body {
   color: var(--ink);
 }
 
-.map-toolbar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.map-toolbar input {
-  flex: 1;
-  padding: 9px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--field-border);
-  background: var(--field-bg);
-  color: var(--ink);
-  font-size: 12.5px;
-  outline: none;
-}
-
-.map-style-btn {
-  padding: 9px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--field-border);
-  background: transparent;
-  color: var(--ink-dim);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  cursor: pointer;
-}
-
-.map-style-btn.active {
-  background: var(--metal-2);
-  color: #1c2138;
-  border-color: var(--metal-2);
-}
-
-.map-wrap {
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid var(--field-border);
-}
-
-#map {
-  height: 200px;
-  width: 100%;
-}
-
-.map-hint {
-  margin: 8px 0 0;
-  font-size: 11.5px;
-  color: var(--ink-dim);
-}
-
-.map-hint--ok {
-  color: var(--success);
-}
-
 .submit-btn {
   padding: 13px 16px;
   border: none;
@@ -426,19 +367,6 @@ body {
           </div>
         </div>
 
-        <div class="field">
-          <span class="field__label">Lieu du défi (obligatoire)</span>
-          <div class="map-toolbar">
-            <input type="text" id="map-search" placeholder="Rechercher un lieu ou x,y...">
-            <button type="button" class="map-style-btn active" data-style="atlas">Atlas</button>
-            <button type="button" class="map-style-btn" data-style="satellite">Satellite</button>
-          </div>
-          <div class="map-wrap">
-            <div id="map"></div>
-          </div>
-          <p class="map-hint" id="map-hint">Cliquez sur la carte pour indiquer l'endroit</p>
-        </div>
-
         <p id="form-message" class="form-message" hidden></p>
 
         <button type="submit" class="submit-btn" id="submit-proof-btn">Envoyer</button>
@@ -450,6 +378,6 @@ body {
 
   <div class="proof-backdrop" id="proof-backdrop"></div>
 
-  <script type="module" src="visiteur.js?v=5"></script>
+  <script type="module" src="visiteur.js?v=6"></script>
 </body>
 </html>
