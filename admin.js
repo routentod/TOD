@@ -895,6 +895,28 @@ let ytPlayer = null;
 let ytReady = false;
 let musicEnPause = true;
 
+// Tant que l'API n'a pas répondu, le bouton est visuellement "en attente"
+// plutôt que silencieusement inactif.
+musicToggleBtn.disabled = true;
+musicToggleBtn.title = "Chargement du lecteur...";
+
+// Si l'API YouTube n'a toujours pas répondu après quelques secondes (bloqueur
+// de pub / anti-tracking qui bloque youtube.com, réseau qui coupe le domaine,
+// etc.), on le signale clairement au lieu de laisser le bouton inerte sans
+// aucune explication.
+const ytTimeoutId = setTimeout(() => {
+  if (!ytReady) {
+    console.warn(
+      "L'API YouTube n'a pas répondu après 6s. Probablement bloquée par un " +
+      "bloqueur de pub / une protection anti-tracking du navigateur, ou par " +
+      "un pare-feu réseau qui empêche l'accès à youtube.com."
+    );
+    musicToggleBtn.title = "Lecteur indisponible (bloqué par le navigateur ou le réseau ?)";
+    musicToggleBtn.style.opacity = "0.4";
+    musicToggleBtn.style.cursor = "not-allowed";
+  }
+}, 6000);
+
 // Appelée automatiquement par l'API YouTube dès qu'elle est chargée
 // (le <script src="https://www.youtube.com/iframe_api"> dans admin.html
 // cherche cette fonction globale par convention).
@@ -913,7 +935,20 @@ window.onYouTubeIframeAPIReady = function () {
     events: {
       onReady: () => {
         ytReady = true;
+        clearTimeout(ytTimeoutId);
         ytPlayer.setVolume(Number(musicVolumeInput.value));
+        musicToggleBtn.disabled = false;
+        musicToggleBtn.title = "";
+        musicToggleBtn.style.opacity = "";
+        musicToggleBtn.style.cursor = "";
+      },
+      onError: (event) => {
+        // Codes YT : 2 = ID invalide, 5 = erreur lecteur HTML5, 100 = vidéo
+        // introuvable/privée, 101/150 = intégration désactivée par l'auteur.
+        console.error("Erreur lecteur YouTube, code :", event.data);
+        musicToggleBtn.title = "Erreur de lecture (code " + event.data + ")";
+        musicToggleBtn.style.opacity = "0.4";
+        musicToggleBtn.style.cursor = "not-allowed";
       },
     },
   });
