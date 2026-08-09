@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protocole de sécurité</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #04070f;
+  --panel-bg: rgba(6, 14, 28, 0.68);
+  --panel-border: rgba(90, 200, 255, 0.28);
+  --grid-line: rgba(90, 200, 255, 0.14);
+  --accent: #4ad8ff;
+  --accent-strong: #9ff0ff;
+  --accent-dim: rgba(74, 216, 255, 0.35);
+  --accent-glow: rgba(74, 216, 255, 0.45);
+  --ink: #eaf6ff;
+  --ink-dim: rgba(234, 246, 255, 0.5);
+  --ink-faint: rgba(234, 246, 255, 0.28);
+  --danger: #ff5c6a;
+  --danger-dim: rgba(255, 92, 106, 0.35);
+
+  --font-display: "Manrope", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-mono);
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(74, 216, 255, 0.08) 0%, rgba(4, 7, 15, 0) 55%),
+    radial-gradient(ellipse at 100% 100%, rgba(74, 216, 255, 0.06) 0%, rgba(4, 7, 15, 0) 50%),
+    var(--bg-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-x: hidden;
+}
+
+.frame {
+  width: 100%;
+  max-width: 1180px;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  background: rgba(3, 8, 16, 0.55);
+  box-shadow: 0 0 0 1px rgba(74, 216, 255, 0.06), 0 30px 80px -30px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+/* ---- Barre supérieure ---- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--grid-line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  color: var(--accent-strong);
+}
+
+.brand__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px 2px var(--accent-glow);
+}
+
+.topbar__sub {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+
+/* ---- Bandeau titre ---- */
+.titlebar {
+  padding: 12px 22px;
+  background: linear-gradient(90deg, rgba(74, 216, 255, 0.14), rgba(74, 216, 255, 0.02));
+  border-bottom: 1px solid var(--grid-line);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+/* ---- Corps ---- */
+.body {
+  padding: 26px 28px 22px;
+}
+
+.timer-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.timer-row__label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.timer-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(74, 216, 255, 0.1);
+  overflow: hidden;
+}
+
+.timer-bar__fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 0 10px var(--accent-glow);
+  transition: width 0.1s linear, background 0.2s ease;
+}
+
+.timer-value {
+  min-width: 78px;
+  text-align: right;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.panel {
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  background: var(--panel-bg);
+}
+
+.panel__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--grid-line);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.panel__head svg { flex-shrink: 0; }
+
+.panel__body { padding: 16px; }
+
+/* ---- Matrice de code ---- */
+.matrix {
+  display: grid;
+  gap: 6px;
+}
+
+.matrix__row {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 5), 1fr);
+  gap: 6px;
+}
+
+.cell {
+  position: relative;
+  padding: 10px 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--ink-dim);
+  background: rgba(74, 216, 255, 0.03);
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: default;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.cell--selectable {
+  color: var(--ink);
+  border-color: var(--panel-border);
+  cursor: pointer;
+}
+
+.cell--selectable:hover {
+  border-color: var(--accent);
+  background: rgba(74, 216, 255, 0.12);
+  color: var(--accent-strong);
+}
+
+.cell--used {
+  color: var(--ink-faint);
+  background: transparent;
+  opacity: 0.35;
+}
+
+.cell--picked {
+  color: #04070f;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 12px var(--accent-glow);
+  opacity: 1;
+}
+
+.cell--pick-order {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 8.5px;
+  color: rgba(4, 7, 15, 0.55);
+}
+
+/* ---- Mémoire tampon ---- */
+.buffer-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.buffer-slot {
+  width: 40px;
+  height: 34px;
+  border: 1px solid var(--panel-border);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--ink-faint);
+  background: rgba(74, 216, 255, 0.03);
+}
+
+.buffer-slot--filled {
+  color: var(--accent-strong);
+  border-color: var(--accent);
+  background: rgba(74, 216, 255, 0.14);
+}
+
+/* ---- Séquence requise ---- */
+.sequence {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sequence__codes {
+  display: flex;
+  gap: 6px;
+}
+
+.seq-chip {
+  width: 38px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--panel-border);
+  border-radius: 2px;
+  font-size: 12.5px;
+  color: var(--ink-dim);
+  background: rgba(74, 216, 255, 0.03);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.seq-chip--progress {
+  color: var(--accent-strong);
+  border-color: var(--accent);
+  background: rgba(74, 216, 255, 0.2);
+}
+
+.seq-chip--done {
+  color: #04070f;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.sequence__desc {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+
+.sequence__title {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 12.5px;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+/* ---- Pied ---- */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  border-top: 1px solid var(--grid-line);
+}
+
+.footer__hints {
+  display: flex;
+  gap: 18px;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-dim);
+  margin-right: 5px;
+}
+
+.cancel-btn {
+  padding: 8px 16px;
+  border-radius: 3px;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--ink-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.cancel-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* ---- Overlay de résultat ---- */
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 6, 12, 0.82);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 40;
+}
+
+.result-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.result-card {
+  text-align: center;
+  padding: 36px 44px;
+  border-radius: 4px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+}
+
+.result-card__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  margin: 0 0 10px;
+}
+
+.result-card--success .result-card__title { color: var(--accent-strong); }
+.result-card--fail .result-card__title { color: var(--danger); }
+
+.result-card__sub {
+  font-size: 12.5px;
+  color: var(--ink-dim);
+  margin: 0 0 22px;
+}
+
+.result-card__btn {
+  padding: 11px 22px;
+  border-radius: 3px;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.result-card--success .result-card__btn {
+  background: var(--accent-strong);
+  color: #04070f;
+  font-weight: 700;
+}
+
+.result-card--fail .result-card__btn {
+  background: transparent;
+  border: 1px solid var(--danger-dim);
+  color: var(--danger);
+}
+
+@media (max-width: 760px) {
+  .columns { grid-template-columns: 1fr; }
+  .cell { font-size: 13px; padding: 8px 0; }
+  .footer { flex-direction: column; gap: 10px; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+  <div class="frame">
+    <div class="topbar">
+      <div class="brand"><span class="brand__dot"></span>ACCÈS::ADMIN</div>
+      <div class="topbar__sub" id="identifiant-label"></div>
+    </div>
+
+    <div class="titlebar">Interface de protocole de piratage — authentification requise</div>
+
+    <div class="body">
+      <div class="timer-row">
+        <span class="timer-row__label">Temps de piratage restant</span>
+        <div class="timer-bar"><div class="timer-bar__fill" id="timer-fill"></div></div>
+        <span class="timer-value" id="timer-value">00.00</span>
+      </div>
+
+      <div class="columns">
+        <div class="panel">
+          <div class="panel__head">Matrice de code</div>
+          <div class="panel__body">
+            <div class="matrix" id="matrix" style="--cols: 5"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel__head">Mémoire tampon</div>
+          <div class="panel__body">
+            <div class="buffer-row" id="buffer-row"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top: 22px;">
+        <div class="panel__head">Séquence nécessaire pour accéder</div>
+        <div class="panel__body sequence">
+          <div class="sequence__codes" id="sequence-codes"></div>
+          <div class="sequence__desc">
+            <span class="sequence__title">ACCÈS_ADMIN</span>
+            Reproduisez cette séquence dans la matrice pour déverrouiller le tableau de bord.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer__hints">
+        <span><kbd>clic</kbd>sélectionner</span>
+        <span><kbd>esc</kbd>annuler</span>
+      </div>
+      <button type="button" class="cancel-btn" id="cancel-btn">Annuler</button>
+    </div>
+  </div>
+
+  <div class="result-overlay" id="result-overlay">
+    <div class="result-card" id="result-card">
+      <p class="result-card__title" id="result-title"></p>
+      <p class="result-card__sub" id="result-sub"></p>
+      <button type="button" class="result-card__btn" id="result-btn"></button>
+    </div>
+  </div>
+
+  <script type="module" src="hack.js"></script>
+</body>
+</html>
