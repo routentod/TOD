@@ -25,6 +25,7 @@ const defiMontantEl = document.getElementById("defi-montant");
 const timerEl = document.getElementById("timer");
 const toggleProofBtn = document.getElementById("toggle-proof-btn");
 const proofDoneEl = document.getElementById("proof-done");
+const proofEchecEl = document.getElementById("proof-echec");
 const proofForm = document.getElementById("proof-form");
 const proofTitreInput = document.getElementById("proof-titre");
 const proofLienInput = document.getElementById("proof-lien");
@@ -40,6 +41,7 @@ let lieuLat = null;
 let lieuLng = null;
 let map = null;
 let marker = null;
+let preuveEnvoyee = false; // état courant, mis à jour à chaque changement d'affichage
 
 // ---- Configuration de la carte GTA V (reprise de map.html) ----
 const MAP_TILE_SIZE = 256;
@@ -189,11 +191,21 @@ function initMap() {
 function afficherPreuveDejaEnvoyee() {
   toggleProofBtn.style.display = "none";
   proofDoneEl.style.display = "flex";
+  proofEchecEl.style.display = "none";
+  preuveEnvoyee = true;
 }
 
 function afficherBoutonPreuve() {
   toggleProofBtn.style.display = "";
   proofDoneEl.style.display = "none";
+  proofEchecEl.style.display = "none";
+  preuveEnvoyee = false;
+}
+
+function afficherEchec() {
+  toggleProofBtn.style.display = "none";
+  proofDoneEl.style.display = "none";
+  proofEchecEl.style.display = "flex";
 }
 
 // État de départ déterministe (indépendant de l'attribut "hidden" du HTML)
@@ -217,8 +229,6 @@ async function chargerDefi() {
   dureeSecondes = defi.duree_secondes;
   lanceLe = defi.lance_le;
 
-  demarrerTimer();
-
   const { data: dejaEnvoye, error: dejaEnvoyeError } = await supabase.rpc("a_envoye_preuve", {
     p_identifiant: identifiant,
   });
@@ -226,14 +236,16 @@ async function chargerDefi() {
   if (dejaEnvoyeError) {
     console.error("Erreur a_envoye_preuve :", dejaEnvoyeError);
     afficherBoutonPreuve();
-    return;
-  }
-
-  if (dejaEnvoye === true) {
+  } else if (dejaEnvoye === true) {
     afficherPreuveDejaEnvoyee();
   } else {
     afficherBoutonPreuve();
   }
+
+  // Le timer démarre après avoir su si une preuve a déjà été envoyée, pour
+  // pouvoir afficher "Échec" correctement dès le chargement si le défi est
+  // déjà terminé sans preuve.
+  demarrerTimer();
 }
 
 // ---- Timer qui descend tout seul depuis le lancement ----
@@ -263,6 +275,13 @@ function demarrerTimer() {
       clearInterval(intervalId);
       timerEl.textContent = "Défi terminé";
       timerEl.classList.add("timer--attente");
+
+      // Le temps est écoulé : si aucune preuve n'a été envoyée, on affiche
+      // "Échec" à la place du bouton (et on ferme le formulaire s'il était ouvert).
+      if (!preuveEnvoyee) {
+        closeProofForm();
+        afficherEchec();
+      }
     }
   }
 
