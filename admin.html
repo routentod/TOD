@@ -616,14 +616,6 @@ body {
 .new-defi-btn:hover { background: var(--glass-bg-strong); }
 .new-defi-btn:active { transform: translateY(1px); }
 
-/* Liens de navigation vers les jeux : même look que new-defi-btn,
-   mais ce sont des <a> (pas des <button>), donc on retire le
-   soulignement et on force le texte à ne pas passer à la ligne. */
-.game-nav-btn {
-  text-decoration: none;
-  white-space: nowrap;
-}
-
 /* ---- Modale "Nouveau défi" ---- */
 .modal-backdrop {
   position: fixed;
@@ -1081,9 +1073,6 @@ body {
         <span>Espace admin</span>
       </div>
       <div class="topbar__right" id="topbar-right">
-        <a href="hack.html" class="new-defi-btn game-nav-btn">🔓 Hack</a>
-        <a href="dnahack.html" class="new-defi-btn game-nav-btn">🧬 DNA Hack</a>
-        <a href="netrunner2.html" class="new-defi-btn game-nav-btn">🖥 Netrunner</a>
         <button id="new-joueur-btn" class="new-defi-btn" type="button">+ Nouveau joueur</button>
         <button id="categories-btn" class="new-defi-btn" type="button">Catégories</button>
         <button id="new-defi-btn" class="new-defi-btn" type="button">+ Nouveau défi</button>
