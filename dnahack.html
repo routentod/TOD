@@ -69,6 +69,27 @@
     z-index:1;
   }
 
+  .back-btn{
+    position:fixed;
+    top:calc(env(safe-area-inset-top, 0px) + 10px);
+    left:calc(env(safe-area-inset-left, 0px) + 10px);
+    z-index:500;
+    display:flex; align-items:center; gap:6px;
+    padding:7px 13px;
+    border:1px solid var(--dim2);
+    border-radius:999px;
+    background:rgba(5,8,10,0.72);
+    backdrop-filter:blur(8px);
+    color:var(--cyan);
+    font-family:'Share Tech Mono', monospace;
+    font-size:11px;
+    letter-spacing:.06em;
+    text-decoration:none;
+    white-space:nowrap;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .back-btn:hover{ background:rgba(77,255,240,0.12); border-color:var(--cyan); }
+
   .eyebrow{
     font-size:10px;
     letter-spacing:.22em;
@@ -416,6 +437,8 @@
 
 <div class="scan"></div>
 <div class="vignette"></div>
+
+<a href="admin.html" class="back-btn">← Retour</a>
 
 <div class="stage" id="stage">
   <div class="eyebrow">
