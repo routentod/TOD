@@ -547,10 +547,35 @@
   ];
 
   /* ============================================================
-     ÉTAT GLOBAL (persiste entre missions dans la session)
+     ÉTAT GLOBAL (persiste entre sessions via localStorage)
      ============================================================ */
 
-  const meta = { credits:0, owned_tools:new Set(["SSHcrack v1","PortHack v1"]), completed:new Set() };
+  const META_KEY = "netrunner2_progress";
+
+  function loadMeta(){
+    try {
+      const raw = localStorage.getItem(META_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      return {
+        credits: typeof obj.credits === "number" ? obj.credits : 0,
+        owned_tools: new Set(Array.isArray(obj.owned_tools) ? obj.owned_tools : ["SSHcrack v1","PortHack v1"]),
+        completed: new Set(Array.isArray(obj.completed) ? obj.completed : [])
+      };
+    } catch(e){ return null; }
+  }
+
+  function saveMeta(){
+    try {
+      localStorage.setItem(META_KEY, JSON.stringify({
+        credits: meta.credits,
+        owned_tools: Array.from(meta.owned_tools),
+        completed: Array.from(meta.completed)
+      }));
+    } catch(e){ /* stockage indisponible : on continue sans persister */ }
+  }
+
+  const meta = loadMeta() || { credits:0, owned_tools:new Set(["SSHcrack v1","PortHack v1"]), completed:new Set() };
 
   let world = null;      // état de la mission en cours
   let mission = null;    // mission active
@@ -989,6 +1014,7 @@
           printHTML(`<span class="title">— MISSION ACCOMPLIE : ${mission.title} —</span>`);
           print(`${mission.reward} ¥ transférés au collectif 0x1B.`, "ok");
           meta.completed.add(mission.id);
+          saveMeta();
           clearInterval(ambientIv);
           const nextIdx = missions.findIndex(m=>m.id===mission.id) + 1;
           if (nextIdx < missions.length){
@@ -1098,6 +1124,7 @@
       traceEl.textContent = Math.floor(world.trace) + "%";
       traceWrap.classList.toggle("danger", world.trace >= 60);
     }
+    saveMeta();
   }
 
   function renderSide(){
