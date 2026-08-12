@@ -131,13 +131,14 @@
   .hud .trace.danger b{color:var(--red); animation:blink 0.6s infinite;}
   @keyframes blink{50%{opacity:.35;}}
 
-  #menu-toggle, #missions-btn{
+  #menu-toggle, #missions-btn, #back-btn{
     background:none; border:1px solid var(--line-strong); color:var(--cyan);
     font-family:var(--disp); font-size:11px; padding:8px 10px; cursor:pointer; letter-spacing:.1em;
     white-space:nowrap;
   }
+  #back-btn{ display:inline-flex; align-items:center; text-decoration:none; }
   #menu-toggle{display:none;}
-  #missions-btn:hover{ border-color:var(--cyan); }
+  #missions-btn:hover, #back-btn:hover{ border-color:var(--cyan); }
 
   #content{ position:relative; min-height:0; }
   .view{ position:absolute; inset:0; display:none; min-height:0; }
@@ -256,7 +257,7 @@
     #app{ max-width:none; max-height:none; height:100vh; width:100vw; border:none; border-radius:0; box-shadow:none; }
     #app::before, #app::after{ display:none; }
     #menu-toggle{display:inline-block;}
-    #missions-btn span.lbl{ display:none; }
+    #missions-btn span.lbl, #back-btn span.lbl{ display:none; }
     #view-terminal.active{ grid-template-columns:1fr; }
     #terminal-wrap{ border-right:none; }
     #side{
@@ -300,6 +301,7 @@
     <div class="hud">
       <div class="stat hide-mobile"><b id="hud-credits">0 ¥</b>CRÉDITS</div>
       <div class="stat trace" id="hud-trace-wrap" style="display:none;"><b id="hud-trace">0%</b>TRAÇAGE</div>
+      <a id="back-btn" href="admin.html">← <span class="lbl">RETOUR</span></a>
       <button id="menu-toggle">☰ RÉSEAU</button>
       <button id="missions-btn">🗂 <span class="lbl">MISSIONS</span></button>
     </div>
