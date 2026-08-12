@@ -36,6 +36,10 @@
     font-family:var(--mono);
     overflow:hidden;
     height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:clamp(0px, 3vh, 34px) clamp(0px, 3vw, 34px);
   }
   ::selection{ background:var(--magenta); color:#000; }
   ::-webkit-scrollbar{width:8px; height:8px;}
@@ -64,24 +68,42 @@
   #boot-skip:hover{color:var(--cyan); border-color:var(--cyan);}
 
   .scanlines{
-    pointer-events:none; position:fixed; inset:0; z-index:90;
+    pointer-events:none; position:absolute; inset:0; z-index:90;
     background:repeating-linear-gradient(
       to bottom, rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 1px,
       transparent 1px, transparent 3px);
     mix-blend-mode:overlay;
   }
   .vignette{
-    pointer-events:none; position:fixed; inset:0; z-index:91;
+    pointer-events:none; position:absolute; inset:0; z-index:91;
     box-shadow: inset 0 0 160px rgba(0,0,0,0.85);
   }
 
-  /* ---------- app shell ---------- */
+  /* ---------- app shell (fenêtre "terminal" centrée sur desktop) ---------- */
   #app{
     display:none;
-    height:100vh;
+    position:relative;
+    width:100%;
+    max-width:1360px;
+    height:100%;
+    max-height:860px;
     grid-template-rows:auto 1fr auto;
     display:grid;
+    border:1px solid var(--line-strong);
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--bg);
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.5),
+      0 40px 90px rgba(0,0,0,0.65),
+      0 0 70px rgba(77,243,255,0.06);
   }
+  #app::before, #app::after{
+    content:''; position:absolute; width:16px; height:16px; z-index:95; pointer-events:none;
+    border-color:var(--cyan-dim); opacity:.7;
+  }
+  #app::before{ top:8px; left:8px; border-top:1px solid; border-left:1px solid; }
+  #app::after{ bottom:8px; right:8px; border-bottom:1px solid; border-right:1px solid; }
   header{
     display:flex; align-items:center; justify-content:space-between;
     padding:10px 16px;
@@ -116,7 +138,7 @@
 
   main{
     display:grid;
-    grid-template-columns:1fr 320px;
+    grid-template-columns:1fr 340px;
     min-height:0;
   }
   #terminal-wrap{
@@ -186,8 +208,14 @@
   }
   footer b{color:var(--cyan-dim);}
 
-  /* ---------- mobile drawer ---------- */
+  /* ---------- mobile: fenêtre en plein écran, sans bezel ---------- */
   @media (max-width: 860px){
+    body{ padding:0; }
+    #app{
+      max-width:none; max-height:none; height:100vh; width:100vw;
+      border:none; border-radius:0; box-shadow:none;
+    }
+    #app::before, #app::after{ display:none; }
     #menu-toggle{display:inline-block;}
     main{ grid-template-columns:1fr; }
     #terminal-wrap{ border-right:none; }
@@ -216,10 +244,9 @@
   <button id="boot-skip">PASSER ▶</button>
 </div>
 
-<div class="scanlines"></div>
-<div class="vignette"></div>
-
 <div id="app">
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
   <header>
     <div class="brand">
       <div class="glyph">0x</div>
