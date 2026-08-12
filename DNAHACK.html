@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>SÉQUENCEUR ADN</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Share+Tech+Mono&display=swap');
+
+  :root{
+    --void:#05080a;
+    --panel:#0a1416;
+    --panel-2:#0e1b1d;
+    --line:#173033;
+    --cyan:#4dfff0;
+    --lime:#b6ff3c;
+    --amber:#ffb734;
+    --red:#ff3860;
+    --dim:#5c807c;
+    --dim2:#345255;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100dvh;
+    background:var(--void);
+    color:#dfffee;
+    font-family:'Share Tech Mono', monospace;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    position:relative;
+    touch-action:none;
+  }
+
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(77,255,240,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(77,255,240,0.05) 1px, transparent 1px);
+    background-size:34px 34px;
+    mask-image:radial-gradient(ellipse at 50% 30%, black 10%, transparent 75%);
+    pointer-events:none;
+  }
+  .scan{
+    position:fixed; inset:0; pointer-events:none; z-index:60;
+    background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.10) 3px);
+    mix-blend-mode:overlay;
+  }
+  .vignette{
+    position:fixed; inset:0; pointer-events:none; z-index:61;
+    background:radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,0.65) 100%);
+  }
+
+  .stage{
+    width:100%;
+    max-width:430px;
+    height:100dvh;
+    max-height:900px;
+    display:flex;
+    flex-direction:column;
+    padding:clamp(10px,3vw,18px);
+    gap:clamp(6px,1.4vh,10px);
+    position:relative;
+    z-index:1;
+  }
+
+  .eyebrow{
+    font-size:10px;
+    letter-spacing:.22em;
+    color:var(--dim);
+    display:flex;
+    justify-content:space-between;
+  }
+  .eyebrow span.blink{color:var(--lime); animation:blink 1.3s steps(2) infinite;}
+  @keyframes blink{50%{opacity:.25}}
+
+  .titlerow{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+  h1{
+    font-family:'Chakra Petch',sans-serif;
+    font-weight:700;
+    font-size:clamp(17px,5.4vw,23px);
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    margin:0;
+    color:#eafffb;
+    text-shadow:0 0 14px rgba(77,255,240,.45);
+    line-height:1.1;
+  }
+  h1 em{font-style:normal; color:var(--cyan);}
+
+  .stepbadge{
+    flex-shrink:0;
+    font-family:'Chakra Petch',sans-serif;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.08em;
+    color:var(--lime);
+    border:1px solid var(--dim2);
+    border-radius:20px;
+    padding:4px 10px;
+    white-space:nowrap;
+    margin-top:2px;
+  }
+
+  .sub{
+    font-size:10.5px;
+    color:var(--dim);
+    letter-spacing:.02em;
+    margin-top:2px;
+  }
+
+  .timerwrap{
+    height:6px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    position:relative;
+    overflow:hidden;
+    border-radius:2px;
+  }
+  .timerbar{
+    height:100%;
+    width:100%;
+    background:linear-gradient(90deg, var(--cyan), var(--lime));
+    transition:width .2s linear, background .3s;
+    box-shadow:0 0 10px rgba(77,255,240,.6);
+  }
+  .timerbar.warn{background:linear-gradient(90deg, var(--amber), var(--red)); box-shadow:0 0 10px rgba(255,56,96,.6);}
+
+  .statusrow{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:11px;
+    color:var(--dim);
+    letter-spacing:.05em;
+  }
+  .lives{display:flex; gap:5px;}
+  .lives i{
+    width:9px; height:9px; border:1px solid var(--cyan);
+    display:inline-block; transform:rotate(45deg);
+    background:rgba(77,255,240,.15);
+  }
+  .lives i.lost{border-color:var(--dim2); background:transparent; box-shadow:none;}
+
+  .codexBar{
+    flex:none;
+    background:rgba(77,255,240,.06); border:1px solid rgba(77,255,240,.35);
+    border-radius:6px; padding:8px 10px;
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .codexTag{
+    flex:none; font-size:10px; color:var(--cyan); letter-spacing:.1em;
+  }
+  .codexList{
+    font-size:12px; line-height:1.5; letter-spacing:.02em; color:#dfffee;
+  }
+
+  .frame{position:relative; flex:1; display:flex; min-height:0;}
+
+  /* ---------- shared molecule silhouette ---------- */
+  .molecule-wrap{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    min-height:0;
+    position:relative;
+  }
+  .molecule{
+    position:relative;
+    width:150px;
+    height:100%;
+    max-height:100%;
+  }
+  .molecule svg.strands{position:absolute; inset:0; width:100%; height:100%;}
+  .dz{
+    position:relative;
+    z-index:2;
+    height:15.5%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+  }
+  .dz .num{
+    font-size:9px; color:var(--dim2); letter-spacing:.05em; width:16px; text-align:right;
+  }
+  .dz .slotbar{
+    flex:1;
+    height:20px;
+    border-radius:4px;
+    border:1px dashed var(--dim2);
+    background:rgba(255,255,255,0.02);
+    transition:all .2s;
+  }
+  .dz.hover .slotbar{border-color:var(--lime); box-shadow:0 0 10px rgba(182,255,60,.4); background:rgba(182,255,60,.06);}
+  .dz.filled .slotbar{border-style:solid; display:flex; align-items:center; justify-content:center;}
+
+  /* ---------- ÉTAPE 1 : reconstruction du brin — les emplacements sont
+     les boucles réelles de la molécule (tracées en pointillé tant qu'elles
+     ne sont pas complétées), pas des cases abstraites ---------- */
+  #moleculeStep1 .strand-seg{
+    stroke:var(--seg-color, var(--dim2));
+    stroke-width:3;
+    stroke-dasharray:5 4;
+    fill:none;
+    opacity:.6;
+    transition:stroke .2s, opacity .2s, stroke-width .2s, filter .2s;
+  }
+  #moleculeStep1 .strand-seg.hover{
+    stroke:var(--lime);
+    stroke-width:4;
+    opacity:.95;
+    filter:drop-shadow(0 0 5px rgba(182,255,60,.55));
+  }
+  #moleculeStep1 .strand-seg.filled{
+    stroke-dasharray:none;
+    stroke-width:5;
+    opacity:1;
+    filter:drop-shadow(0 0 6px currentColor);
+  }
+  .piece.strandpiece{
+    border:none;
+    background:transparent;
+  }
+  .piece.strandpiece svg{width:100%; height:100%; display:block; overflow:visible;}
+
+  /* ---------- shared piece look ---------- */
+  .piece{
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    touch-action:none;
+    cursor:grab;
+    user-select:none;
+  }
+  .piece .pbar{width:70%; height:6px; border-radius:2px;}
+  .piece .plabel{font-size:9px; color:#bfe9e2; letter-spacing:.04em;}
+  .piece.decoy .plabel{color:var(--dim);}
+  .piece.dragging{
+    position:fixed;
+    z-index:200;
+    box-shadow:0 0 18px rgba(77,255,240,.5);
+    transform:rotate(-2deg) !important;
+    pointer-events:none;
+  }
+  /* pièce-brin (étape 1) : la boîte est agrandie en JS (voir dragMagFor /
+     attachDrag), pas via transform:scale — un scale() grossit autour du
+     CENTRE de la boîte, donc le point exact attrapé sous le doigt s'écarte
+     du curseur au fil du geste ; en changeant la vraie largeur/hauteur, le
+     point attrapé reste pile sous le curseur. Ici on ne garde que l'aspect
+     visuel : pas d'ombre carrée (boîte transparente sans bordure), un halo
+     qui suit le trait de la courbe à la place. */
+  .piece.strandpiece.dragging{
+    box-shadow:none;
+    filter:drop-shadow(0 0 5px rgba(77,255,240,.6));
+  }
+  .piece.placed{
+    position:static;
+    height:100%;
+    width:100%;
+    border:none;
+    background:transparent;
+    box-shadow:none;
+    cursor:default;
+    transform:none !important;
+  }
+  .piece.placed .plabel{display:none;}
+  .piece.placed .pbar{width:88%; height:10px;}
+  .piece.gone{display:none;}
+
+  /* ---------- panneau commun aux 2 puzzles (molécule + fragments) ---------- */
+  .puzzle-panel{width:100%; display:flex; min-height:0;}
+  .jigsaw-frame{position:relative; width:100%; height:100%; min-height:0;}
+  .jigsaw-frame .molecule{position:absolute; left:50%; top:0; transform:translateX(-50%);}
+  .jigsaw-frame .dz .slotbar{opacity:.85;}
+  .shards-field{position:absolute; inset:0; z-index:5; pointer-events:none;}
+  .shards-field .piece{pointer-events:auto;}
+  .piece.scatter{
+    position:absolute;
+    width:74px;
+    height:48px;
+  }
+
+  /* ---------- STEP 2 : sequence assembly ---------- */
+  .step2{width:100%; display:flex; flex-direction:column; gap:8px; min-height:0;}
+  .tray{
+    flex-shrink:0;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:7px;
+    padding-top:4px;
+    border-top:1px solid var(--line);
+  }
+  .tray .piece{height:46px;}
+
+  /* transition flash */
+  .flash{
+    position:absolute; inset:0; z-index:50;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(4,10,10,.88);
+    opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .flash.show{opacity:1;}
+  .flash span{
+    font-family:'Chakra Petch',sans-serif; text-transform:uppercase; letter-spacing:.1em;
+    color:var(--lime); font-size:15px; text-shadow:0 0 14px rgba(182,255,60,.6);
+  }
+
+  .overlay{
+    position:absolute; inset:0; background:rgba(4,8,9,.92);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; gap:10px; padding:20px;
+    opacity:0; pointer-events:none; transition:opacity .3s; z-index:70; border-radius:10px;
+  }
+  .overlay.show{opacity:1; pointer-events:auto;}
+  .overlay h2{font-family:'Chakra Petch',sans-serif; text-transform:uppercase; font-size:22px; letter-spacing:.05em; margin:0;}
+  .overlay.win h2{color:var(--lime); text-shadow:0 0 16px rgba(182,255,60,.6);}
+  .overlay.lose h2{color:var(--red); text-shadow:0 0 16px rgba(255,56,96,.6);}
+  .overlay p{color:var(--dim); font-size:12px; margin:0; max-width:260px;}
+  .btn{
+    margin-top:8px; background:transparent; border:1px solid var(--cyan); color:var(--cyan);
+    font-family:'Chakra Petch',sans-serif; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+    font-size:12px; padding:11px 22px; border-radius:5px; cursor:pointer; transition:.15s;
+  }
+  .btn:active{background:rgba(77,255,240,.15); transform:scale(.97);}
+
+  .glitch{animation:gl .25s linear;}
+  @keyframes gl{
+    0%{filter:none}
+    20%{filter:hue-rotate(30deg) blur(.3px); transform:translateX(-1px)}
+    40%{filter:none; transform:translateX(1px)}
+    60%{filter:hue-rotate(-20deg); transform:translateX(-1px)}
+    100%{filter:none; transform:translateX(0)}
+  }
+
+  /* ================= DESKTOP ================= */
+  @media (min-width:720px) and (min-height:600px){
+    body{padding:40px;}
+
+    .stage{
+      max-width:600px;
+      max-height:860px;
+      padding:30px 36px;
+      gap:14px;
+      border:1px solid rgba(77,255,240,.22);
+      border-radius:16px;
+      background:linear-gradient(180deg, rgba(14,27,29,.55), rgba(6,11,12,.35));
+      box-shadow:0 0 0 1px rgba(0,0,0,.4), 0 30px 80px rgba(0,0,0,.55), 0 0 70px rgba(77,255,240,.06), inset 0 1px 0 rgba(255,255,255,.03);
+      backdrop-filter:blur(3px);
+    }
+    /* corner brackets, purely decorative HUD framing */
+    .stage::before, .stage::after,
+    .frame::before, .frame::after{
+      content:""; position:absolute; width:18px; height:18px;
+      border:1.5px solid rgba(77,255,240,.55); pointer-events:none; z-index:2;
+    }
+    .stage::before{top:-1px; left:-1px; border-right:none; border-bottom:none; border-top-left-radius:6px;}
+    .stage::after{top:-1px; right:-1px; border-left:none; border-bottom:none; border-top-right-radius:6px;}
+    .frame::before{bottom:-1px; left:-1px; border-right:none; border-top:none; border-bottom-left-radius:6px;}
+    .frame::after{bottom:-1px; right:-1px; border-left:none; border-top:none; border-bottom-right-radius:6px;}
+
+    .eyebrow{font-size:11px;}
+    h1{font-size:30px;}
+    .sub{font-size:12px; max-width:420px;}
+    .stepbadge{font-size:11px; padding:5px 13px;}
+
+    .codexBar{padding:11px 16px;}
+    .codexTag{font-size:11px;}
+    .codexList{font-size:13.5px; line-height:1.6;}
+
+    .molecule{width:200px;}
+    .dz .num{font-size:10px; width:20px;}
+    .dz .slotbar{height:24px;}
+
+    .piece{cursor:grab; transition:box-shadow .15s, border-color .15s;}
+    .piece:not(.dragging):not(.placed):hover{
+      border-color:rgba(77,255,240,.6);
+      box-shadow:0 0 16px rgba(77,255,240,.3);
+    }
+    .piece:active{cursor:grabbing;}
+    .piece .plabel{font-size:10.5px;}
+    .piece.scatter{width:96px; height:60px;}
+    /* survol souris : la courbe grossit sur place (transform-origin center)
+       pour se comparer facilement à la boucle du brin sans avoir à
+       déclencher un drag */
+    .piece.strandpiece.scatter:not(.dragging):not(.placed):hover{
+      transform:scale(1.9) !important;
+      z-index:150;
+      transition:transform .15s;
+      box-shadow:none;
+      filter:drop-shadow(0 0 5px rgba(77,255,240,.5));
+    }
+    .piece.strandpiece.dragging{
+      box-shadow:none;
+      filter:drop-shadow(0 0 6px rgba(77,255,240,.6));
+    }
+
+    .codexBar:hover, .dz:hover .slotbar{border-color:rgba(77,255,240,.4);}
+
+    .btn{cursor:pointer; transition:.15s;}
+    .btn:hover{background:rgba(77,255,240,.12); box-shadow:0 0 14px rgba(77,255,240,.25);}
+  }
+</style>
+</head>
+<body>
+
+<div class="scan"></div>
+<div class="vignette"></div>
+
+<div class="stage" id="stage">
+  <div class="eyebrow">
+    <span>NŒUD_BIOMÉTRIQUE · <span id="nodeId">7F-221</span></span>
+    <span class="blink">● LIVE</span>
+  </div>
+
+  <div class="titlerow">
+    <div>
+      <h1>Séquenceur<br><em>ADN</em></h1>
+      <div class="sub" id="subtext">Chaque boucle en pointillé indique déjà sa couleur, mais plusieurs fragments partagent la même teinte : seul un a la courbure exacte, les autres sont trop tordus. Comparez avant de poser.</div>
+    </div>
+    <div class="stepbadge" id="stepBadge">RECONSTRUCTION</div>
+  </div>
+
+  <div class="timerwrap"><div class="timerbar" id="timerbar"></div></div>
+  <div class="statusrow">
+    <span id="timeLabel">90s</span>
+    <div class="lives" id="lives"></div>
+  </div>
+
+  <div class="codexBar" id="codexBar" style="display:none;">
+    <span class="codexTag">CODEX</span>
+    <div class="codexList" id="codexList"></div>
+  </div>
+
+  <div class="frame">
+
+    <!-- ÉTAPE 1 : reconstruction "vase cassé" — association par teinte, sans code -->
+    <div class="puzzle-panel" id="step1">
+      <div class="jigsaw-frame">
+        <div class="molecule" id="moleculeStep1">
+          <svg class="strands" viewBox="0 0 150 300" preserveAspectRatio="none">
+            <path d="M42,0 C110,45 8,90 78,135 C110,157 46,180 78,210 C110,240 46,270 78,300"
+                  fill="none" stroke="#173033" stroke-width="3"/>
+            <path d="M108,0 C40,45 142,90 72,135 C40,157 104,180 72,210 C40,240 104,270 72,300"
+                  fill="none" stroke="#173033" stroke-width="3"/>
+          </svg>
+        </div>
+        <div class="shards-field" id="shardsField1"></div>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 2 : décodage — association par code via le codex -->
+    <div class="puzzle-panel" id="step2" style="display:none;">
+      <div class="jigsaw-frame">
+        <div class="molecule" id="moleculeStep2">
+          <svg class="strands" viewBox="0 0 150 300" preserveAspectRatio="none">
+            <path d="M42,0 C110,45 8,90 78,135 C110,157 46,180 78,210 C110,240 46,270 78,300"
+                  fill="none" stroke="#173033" stroke-width="3"/>
+            <path d="M108,0 C40,45 142,90 72,135 C40,157 104,180 72,210 C40,240 104,270 72,300"
+                  fill="none" stroke="#173033" stroke-width="3"/>
+          </svg>
+        </div>
+        <div class="shards-field" id="shardsField2"></div>
+      </div>
+    </div>
+
+    <div class="flash" id="flashEl"><span id="flashText"></span></div>
+
+    <div class="overlay win" id="winOverlay">
+      <h2>Accès Autorisé</h2>
+      <p id="winText">Hack terminé avec succès.</p>
+      <button class="btn" onclick="startGame()">Relancer</button>
+    </div>
+    <div class="overlay lose" id="loseOverlay">
+      <h2 id="loseTitle">Séquence Corrompue</h2>
+      <p id="loseText">L'intégrité du système est tombée à zéro.</p>
+      <button class="btn" onclick="startGame()">Réessayer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var COLORS = ["#4dfff0","#b6ff3c","#ffb734","#ff3860","#7ee8ff","#c9ff7a"];
+
+  var SLOTS = 6;
+  var TIME_LIMIT = 90;
+  var WRONG_PENALTY = 3;
+  var MAX_LIVES = 3;
+
+  var lives = MAX_LIVES;
+  var timeLeft = TIME_LIMIT;
+  var timerHandle = null;
+  var over = false;
+  var transitioning = false;
+  var shapeFilled = 0; // fragments correctement placés à l'étape 1 (teintes)
+  var codeFilled = 0;  // fragments correctement placés à l'étape 2 (codex)
+
+  var stage = document.getElementById('stage');
+  var timerbar = document.getElementById('timerbar');
+  var timeLabel = document.getElementById('timeLabel');
+  var livesEl = document.getElementById('lives');
+  var codexBarEl = document.getElementById('codexBar');
+  var codexList = document.getElementById('codexList');
+  var winOverlay = document.getElementById('winOverlay');
+  var loseOverlay = document.getElementById('loseOverlay');
+  var nodeId = document.getElementById('nodeId');
+  var stepBadge = document.getElementById('stepBadge');
+  var subtext = document.getElementById('subtext');
+  var step1El = document.getElementById('step1');
+  var step2El = document.getElementById('step2');
+  var moleculeStep1El = document.getElementById('moleculeStep1');
+  var shardsField1El = document.getElementById('shardsField1');
+  var moleculeStep2El = document.getElementById('moleculeStep2');
+  var shardsField2El = document.getElementById('shardsField2');
+  var flashEl = document.getElementById('flashEl');
+  var flashText = document.getElementById('flashText');
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp=a[i]; a[i]=a[j]; a[j]=tmp;
+    }
+    return a;
+  }
+  function rand(min,max){ return Math.random()*(max-min)+min; }
+
+  function randomNodeId(){
+    var hex = 'ABCDEF0123456789';
+    var s='';
+    for(var i=0;i<2;i++) s+=hex[Math.floor(Math.random()*hex.length)];
+    return s+'-'+Math.floor(100+Math.random()*899);
+  }
+
+  function pad2(n){ return n<10 ? '0'+n : ''+n; }
+
+  function buildLives(){
+    livesEl.innerHTML = '';
+    for(var i=0;i<MAX_LIVES;i++){
+      var el = document.createElement('i');
+      if(i>=lives) el.classList.add('lost');
+      livesEl.appendChild(el);
+    }
+  }
+
+  function updateTimerUI(){
+    var pct = Math.max(0, (timeLeft/TIME_LIMIT)*100);
+    timerbar.style.width = pct+'%';
+    timerbar.classList.toggle('warn', timeLeft < TIME_LIMIT*0.3);
+    timeLabel.textContent = Math.ceil(timeLeft)+'s';
+  }
+
+  function registerError(){
+    stage.classList.add('glitch');
+    timeLeft = Math.max(0, timeLeft - WRONG_PENALTY);
+    lives--;
+    buildLives();
+    updateTimerUI();
+    setTimeout(function(){ stage.classList.remove('glitch'); }, 300);
+    if(lives<=0){
+      loseGame('Intégrité Épuisée', "Trois anomalies détectées. Connexion neutralisée.");
+      return true;
+    }
+    return false;
+  }
+
+  function winGame(){
+    over = true;
+    clearInterval(timerHandle);
+    document.getElementById('winText').textContent =
+      'Hack terminé en ' + (TIME_LIMIT - Math.ceil(timeLeft)) + 's. Accès complet.';
+    winOverlay.classList.add('show');
+  }
+
+  function loseGame(title, text){
+    over = true;
+    clearInterval(timerHandle);
+    document.getElementById('loseTitle').textContent = title;
+    document.getElementById('loseText').textContent = text;
+    loseOverlay.classList.add('show');
+  }
+
+  function tick(){
+    if(over || transitioning) return;
+    timeLeft -= 0.1;
+    if(timeLeft<=0){
+      timeLeft = 0;
+      updateTimerUI();
+      loseGame('Délai Expiré', "Le nœud a détecté l'intrusion avant la fin du décodage.");
+      return;
+    }
+    updateTimerUI();
+  }
+
+  function buildSockets(moleculeEl){
+    moleculeEl.querySelectorAll('.dz').forEach(function(d){ d.remove(); });
+    var svg = moleculeEl.querySelector('svg');
+    for(var i=1;i<=SLOTS;i++){
+      var dz = document.createElement('div');
+      dz.className = 'dz';
+      dz.dataset.slot = i;
+      dz.innerHTML = '<span class="num">'+pad2(i)+'</span><div class="slotbar"></div>';
+      moleculeEl.appendChild(dz);
+    }
+    moleculeEl.appendChild(svg);
+  }
+
+  /* ================= CONSTRUCTION DES 2 ÉTAPES ================= */
+
+  function scatterPos(i, total){
+    var side = i % 2 === 0 ? 'L' : 'R';
+    var x = side === 'L' ? rand(3, 27) : rand(73, 97);
+    var slice = 100/total;
+    var y = slice*i + rand(2, Math.max(3, slice-6));
+    y = Math.max(4, Math.min(90, y));
+    var rot = rand(-14, 14);
+    return {left:x.toFixed(1)+'%', top:y.toFixed(1)+'%', rot:rot};
+  }
+
+  function randRange(min,max){ return min + Math.random()*(max-min); }
+
+  // ---- ÉTAPE 1 : les 6 emplacements sont les 6 boucles réelles du brin
+  // d'ADN affiché en fond (3 par brin, mêmes courbes de Bézier que le SVG
+  // décoratif). Chaque boucle en pointillé est teintée à l'avance avec la
+  // couleur de la pièce qui doit s'y loger (voir buildStrandSegments) —
+  // mais la couleur seule ne suffit pas : pour CHAQUE couleur, 2 pièces-
+  // pièges de la même teinte existent, avec une courbure plus prononcée
+  // (voire inversée) que l'originale. Seule la comparaison précise de la
+  // forme départage la bonne pièce parmi les 3 de même couleur.
+  var SEGMENTS = [
+    {n:1, pts:[[42,0],[110,45],[8,90],[78,135]]},
+    {n:2, pts:[[108,0],[40,45],[142,90],[72,135]]},
+    {n:3, pts:[[78,135],[110,157],[46,180],[78,210]]},
+    {n:4, pts:[[72,135],[40,157],[104,180],[72,210]]},
+    {n:5, pts:[[78,210],[110,240],[46,270],[78,300]]},
+    {n:6, pts:[[72,210],[40,240],[104,270],[72,300]]}
+  ];
+  var SEG_THRESHOLD = 22; // unités du viewBox (150x300) — tolérance de dépose
+
+  function bezierPoint(p0,p1,p2,p3,t){
+    var mt = 1-t;
+    return [
+      mt*mt*mt*p0[0] + 3*mt*mt*t*p1[0] + 3*mt*t*t*p2[0] + t*t*t*p3[0],
+      mt*mt*mt*p0[1] + 3*mt*mt*t*p1[1] + 3*mt*t*t*p2[1] + t*t*t*p3[1]
+    ];
+  }
+  function sampleBezier(pts, steps){
+    var out = [];
+    for(var i=0;i<=steps;i++) out.push(bezierPoint(pts[0],pts[1],pts[2],pts[3], i/steps));
+    return out;
+  }
+  function distToSegPx(px,py, x1,y1,x2,y2){
+    var dx=x2-x1, dy=y2-y1;
+    var len2 = dx*dx+dy*dy;
+    var t = len2===0 ? 0 : ((px-x1)*dx+(py-y1)*dy)/len2;
+    t = Math.max(0, Math.min(1, t));
+    var cx = x1+t*dx, cy = y1+t*dy;
+    var ddx = px-cx, ddy = py-cy;
+    return Math.sqrt(ddx*ddx+ddy*ddy);
+  }
+  function distToPolyline(px,py, poly){
+    var min = Infinity;
+    for(var i=0;i<poly.length-1;i++){
+      var d = distToSegPx(px,py, poly[i][0],poly[i][1], poly[i+1][0],poly[i+1][1]);
+      if(d<min) min=d;
+    }
+    return min;
+  }
+  var segPolylines = {};
+  SEGMENTS.forEach(function(seg){ segPolylines[seg.n] = sampleBezier(seg.pts, 24); });
+
+  function segPathD(pts){
+    return 'M'+pts[0][0]+','+pts[0][1]+' C'+pts[1][0]+','+pts[1][1]+' '+pts[2][0]+','+pts[2][1]+' '+pts[3][0]+','+pts[3][1];
+  }
+  // pièce piège n°1 : même orientation générale, mais courbure amplifiée
+  // (les points de contrôle s'écartent davantage de la ligne droite
+  // ancre-à-ancre) — la boucle "part dans le même sens" que la vraie mais
+  // en fait trop, un excès qu'on ne perçoit qu'en comparant les deux.
+  function twistSeg(pts, factor){
+    var p0 = pts[0], p3 = pts[3];
+    function scalePt(p){
+      var t = (p[1]-p0[1]) / (p3[1]-p0[1]);
+      var lerpX = p0[0] + t*(p3[0]-p0[0]);
+      return [ lerpX + (p[0]-lerpX)*factor, p[1] ];
+    }
+    return [ p0, scalePt(pts[1]), scalePt(pts[2]), p3 ];
+  }
+  // pièce piège n°2 : miroir de la boucle autour de l'axe vertical qui
+  // relie ses deux extrémités, courbure inversée (et légèrement amplifiée
+  // elle aussi pour rester dans la même famille visuelle "trop tordue").
+  function mutateSeg(pts){
+    var midX = (pts[0][0]+pts[3][0])/2;
+    return [ pts[0], [2*midX-pts[1][0], pts[1][1]], [2*midX-pts[2][0], pts[2][1]], pts[3] ];
+  }
+  function segBBox(pts, pad){
+    var xs = pts.map(function(p){return p[0];});
+    var ys = pts.map(function(p){return p[1];});
+    var minX=Math.min.apply(null,xs)-pad, maxX=Math.max.apply(null,xs)+pad;
+    var minY=Math.min.apply(null,ys)-pad, maxY=Math.max.apply(null,ys)+pad;
+    return {minX:minX, minY:minY, w:maxX-minX, h:maxY-minY};
+  }
+  function pieceSVG(pts, color){
+    var bb = segBBox(pts, 14);
+    return '<svg viewBox="'+bb.minX+' '+bb.minY+' '+bb.w+' '+bb.h+'" preserveAspectRatio="xMidYMid meet">'+
+      '<path d="'+segPathD(pts)+'" fill="none" stroke="'+color+'" stroke-width="9" stroke-linecap="round"/></svg>';
+  }
+
+  var moleculeStep1SegEls = {};
+  var filledSlots1 = {};
+
+  function buildStrandSegments(){
+    var svg = moleculeStep1El.querySelector('svg.strands');
+    svg.innerHTML = '';
+    moleculeStep1SegEls = {};
+    SEGMENTS.forEach(function(seg){
+      var path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', segPathD(seg.pts));
+      path.classList.add('strand-seg');
+      // indice visuel : la boucle en pointillé est teintée à l'avance avec
+      // la couleur de la pièce qui doit s'y loger, pour qu'on associe
+      // couleur -> emplacement en un coup d'oeil avant même de glisser quoi
+      // que ce soit.
+      path.style.setProperty('--seg-color', COLORS[(seg.n-1)%COLORS.length]);
+      svg.appendChild(path);
+      moleculeStep1SegEls[seg.n] = path;
+    });
+  }
+  function clearStrandHover(){
+    SEGMENTS.forEach(function(seg){
+      var el = moleculeStep1SegEls[seg.n];
+      if(el) el.classList.remove('hover');
+    });
+  }
+  function localPointFromClient(moleculeEl, clientX, clientY){
+    var rect = moleculeEl.getBoundingClientRect();
+    return [ (clientX-rect.left)/rect.width*150, (clientY-rect.top)/rect.height*300 ];
+  }
+  function nearestSegment(moleculeEl, clientX, clientY){
+    var pt = localPointFromClient(moleculeEl, clientX, clientY);
+    var best = null, bestDist = Infinity;
+    SEGMENTS.forEach(function(seg){
+      if(filledSlots1[seg.n]) return;
+      var d = distToPolyline(pt[0], pt[1], segPolylines[seg.n]);
+      if(d < bestDist){ bestDist = d; best = seg.n; }
+    });
+    return {n:best, dist:bestDist};
+  }
+
+  function randomCode(used){
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789'; // sans I/O pour éviter la confusion avec 1/0
+    var c;
+    do {
+      c = chars[Math.floor(Math.random()*chars.length)] + chars[Math.floor(Math.random()*chars.length)];
+    } while(used[c]);
+    used[c] = true;
+    return c;
+  }
+
+  function buildStep1(){
+    // ÉTAPE 1 — reconstruction du brin : les 6 emplacements sont les vraies
+    // boucles de la molécule (tracées en pointillé dès le départ, teintées
+    // à l'avance avec la couleur attendue). Chaque pièce authentique est la
+    // courbe exacte d'une boucle. Pour CHAQUE couleur, 2 pièces piégées de
+    // la même teinte s'ajoutent : une à la courbure amplifiée (même sens,
+    // mais trop marquée) et une miroir amplifiée (sens inversé, encore plus
+    // marquée) — la couleur ne suffit donc plus, il faut comparer la forme.
+    buildStrandSegments();
+    shapeFilled = 0;
+    filledSlots1 = {};
+
+    var real = SEGMENTS.map(function(seg){
+      return {target:seg.n, color: COLORS[(seg.n-1)%COLORS.length], pts:seg.pts};
+    });
+
+    var decoys = [];
+    SEGMENTS.forEach(function(seg){
+      var color = COLORS[(seg.n-1)%COLORS.length];
+      decoys.push({target:'x', color: color, pts: twistSeg(seg.pts, 1.32)});
+      decoys.push({target:'x', color: color, pts: twistSeg(mutateSeg(seg.pts), 1.5)});
+    });
+
+    var pieces = shuffle(real.concat(decoys));
+
+    shardsField1El.innerHTML = '';
+    pieces.forEach(function(p, i){
+      var pos = scatterPos(i, pieces.length);
+      var piece = document.createElement('div');
+      piece.className = 'piece scatter strandpiece' + (p.target==='x' ? ' decoy' : '');
+      piece.dataset.target = p.target;
+      piece.dataset.origLeft = pos.left;
+      piece.dataset.origTop = pos.top;
+      piece.dataset.origRot = 'rotate('+pos.rot.toFixed(1)+'deg)';
+      piece.style.left = pos.left;
+      piece.style.top = pos.top;
+      piece.style.transform = piece.dataset.origRot;
+      piece.innerHTML = pieceSVG(p.pts, p.color);
+      shardsField1El.appendChild(piece);
+      attachDrag(piece, p.color, moleculeStep1El, shardsField1El, 'step1');
+    });
+  }
+
+  function buildStep2(){
+    // ÉTAPE 2 — décodage : chaque pièce porte 2 codes (ex: "G7 - AT"). Le
+    // codex, lui, ne demande qu'UN SEUL code par emplacement : il peut
+    // s'agir du 1er ou du 2nd code de la pièce attendue, peu importe. La
+    // pièce convient dès que l'un de ses 2 codes correspond au code demandé
+    // pour cet emplacement.
+    buildSockets(moleculeStep2El);
+    codeFilled = 0;
+
+    var usedCodes = {};
+    var real = [];
+    var requiredParts = [];
+    for(var n=1;n<=SLOTS;n++){
+      var codeA = randomCode(usedCodes);
+      var codeB = randomCode(usedCodes);
+      var requiredCode = Math.random()<0.5 ? codeA : codeB;
+      requiredParts.push(pad2(n)+' '+requiredCode);
+      real.push({target:n, color: COLORS[(n-1)%COLORS.length], label: codeA+' - '+codeB});
+    }
+    codexList.textContent = requiredParts.join('  -  ');
+
+    var decoys = [
+      {target:'x', color:'#ff3860', label: randomCode(usedCodes)+' - '+randomCode(usedCodes)},
+      {target:'x', color:'#ff3860', label: randomCode(usedCodes)+' - '+randomCode(usedCodes)}
+    ];
+    var pieces = shuffle(real.concat(decoys));
+
+    shardsField2El.innerHTML = '';
+    pieces.forEach(function(p, i){
+      var pos = scatterPos(i, pieces.length);
+      var piece = document.createElement('div');
+      piece.className = 'piece scatter' + (p.target==='x' ? ' decoy' : '');
+      piece.dataset.target = p.target;
+      piece.dataset.origLeft = pos.left;
+      piece.dataset.origTop = pos.top;
+      piece.dataset.origRot = 'rotate('+pos.rot.toFixed(1)+'deg)';
+      piece.style.left = pos.left;
+      piece.style.top = pos.top;
+      piece.style.transform = piece.dataset.origRot;
+      piece.innerHTML = '<div class="pbar" style="background:'+p.color+'"></div><div class="plabel">'+p.label+'</div>';
+      shardsField2El.appendChild(piece);
+      attachDrag(piece, p.color, moleculeStep2El, shardsField2El, 'step2');
+    });
+  }
+
+  function step1Complete(){
+    transitioning = true;
+    flashText.textContent = 'ÉCLATS ASSEMBLÉS — DÉCODAGE...';
+    flashEl.classList.add('show');
+    setTimeout(function(){
+      step1El.style.display = 'none';
+      step2El.style.display = 'flex';
+      codexBarEl.style.display = 'flex';
+      stepBadge.textContent = 'DÉCODAGE';
+      subtext.textContent = "Consultez le codex : chaque emplacement demande 1 code, présent sur l'une des 2 étiquettes de la bonne pièce.";
+      buildStep2();
+      flashEl.classList.remove('show');
+      transitioning = false;
+    }, 900);
+  }
+
+  /* ================= DRAG ENGINE ================= */
+
+  var dragCtx = null;
+
+  // Facteur d'agrandissement pendant le glisser. Avant, l'agrandissement se
+  // faisait via un transform:scale() en CSS : comme un scale() grossit
+  // AUTOUR DU CENTRE de la boîte, le point exact attrapé sous le doigt/la
+  // souris (qui peut être excentré) s'éloignait du curseur au fur et à
+  // mesure -> la pièce "ne suivait pas" bien la souris. On agrandit donc
+  // désormais la vraie largeur/hauteur de la boîte (plus de transform), et
+  // on recalcule l'offset de préhension à la même échelle dès le
+  // pointerdown, pour que le point attrapé reste exactement sous le
+  // curseur du début à la fin du glisser.
+  function dragMagFor(piece){
+    if(!piece.classList.contains('strandpiece')) return 1.06;
+    var desktop = window.innerWidth>=720 && window.innerHeight>=600;
+    return desktop ? 1.7 : 2.1;
+  }
+
+  function attachDrag(piece, color, moleculeEl, shardsFieldEl, phase){
+    piece.addEventListener('pointerdown', function(e){
+      if(over || transitioning) return;
+      if(piece.classList.contains('placed')) return;
+      e.preventDefault();
+      // IMPORTANT : on annule la rotation AVANT de mesurer le rectangle.
+      // Une boîte pivotée (transform:rotate(...)) n'a pas le même left/top
+      // dans getBoundingClientRect() qu'une boîte droite : si on mesure
+      // avant d'annuler la rotation, la carte se repositionne avec un
+      // décalage par rapport au curseur dès le premier drag.
+      piece.style.transform = 'none';
+      var rect = piece.getBoundingClientRect();
+      var mag = dragMagFor(piece);
+      // dimensions naturelles mémorisées pour pouvoir revenir pile à la
+      // bonne taille (et au bon endroit, voir settlePiece) une fois le
+      // glisser terminé.
+      piece.dataset.natW = rect.width;
+      piece.dataset.natH = rect.height;
+      dragCtx = {
+        piece: piece,
+        color: color,
+        moleculeEl: moleculeEl,
+        shardsFieldEl: shardsFieldEl,
+        phase: phase,
+        offsetX: (e.clientX - rect.left) * mag,
+        offsetY: (e.clientY - rect.top) * mag,
+        w: rect.width * mag,
+        h: rect.height * mag
+      };
+      // IMPORTANT : .stage a un backdrop-filter (en desktop), ce qui en fait
+      // le containing block de tout descendant en position:fixed (au lieu du
+      // viewport). On détache donc la pièce vers <body> (qui n'a aucun
+      // filter/transform) AVANT de capturer le pointeur : si on la déplace
+      // dans le DOM après setPointerCapture, la capture est perdue et plus
+      // aucun pointermove/pointerup ne remonte (carte figée).
+      document.body.appendChild(piece);
+      piece.setPointerCapture(e.pointerId);
+      piece.classList.add('dragging');
+      piece.style.position = 'fixed';
+      // on positionne déjà sous le curseur dès la première frame (même
+      // formule que pointermove), pour éviter un micro-saut au moment où
+      // on attrape la pièce.
+      piece.style.left = (e.clientX - dragCtx.offsetX)+'px';
+      piece.style.top = (e.clientY - dragCtx.offsetY)+'px';
+      piece.style.width = dragCtx.w+'px';
+      piece.style.height = dragCtx.h+'px';
+      piece.style.pointerEvents = 'none';
+    });
+
+    piece.addEventListener('pointermove', function(e){
+      if(!dragCtx || dragCtx.piece !== piece) return;
+      piece.style.left = (e.clientX - dragCtx.offsetX)+'px';
+      piece.style.top = (e.clientY - dragCtx.offsetY)+'px';
+
+      if(dragCtx.phase === 'step1'){
+        clearStrandHover();
+        var res = nearestSegment(moleculeStep1El, e.clientX, e.clientY);
+        if(res.n !== null && res.dist <= SEG_THRESHOLD){
+          moleculeStep1SegEls[res.n].classList.add('hover');
+        }
+        return;
+      }
+
+      dragCtx.moleculeEl.querySelectorAll('.dz').forEach(function(dz){ dz.classList.remove('hover'); });
+      var under = document.elementFromPoint(e.clientX, e.clientY);
+      var dz = under ? under.closest('.dz') : null;
+      if(dz && !dz.classList.contains('filled')) dz.classList.add('hover');
+    });
+
+    piece.addEventListener('pointerup', function(e){
+      if(!dragCtx || dragCtx.piece !== piece) return;
+      finishDrag(e.clientX, e.clientY);
+    });
+    piece.addEventListener('pointercancel', function(e){
+      if(!dragCtx || dragCtx.piece !== piece) return;
+      finishDrag(e.clientX, e.clientY);
+    });
+  }
+
+  function finishDrag(x, y){
+    var piece = dragCtx.piece;
+    var color = dragCtx.color;
+    var phase = dragCtx.phase;
+    var shardsFieldEl = dragCtx.shardsFieldEl;
+    piece.style.pointerEvents = '';
+
+    if(phase === 'step1'){
+      clearStrandHover();
+      var res = nearestSegment(moleculeStep1El, x, y);
+      if(res.n !== null && res.dist <= SEG_THRESHOLD){
+        if(String(piece.dataset.target) === String(res.n)){
+          // bonne boucle : on la fixe et on marque le tracé comme complété
+          filledSlots1[res.n] = true;
+          var segPath = moleculeStep1SegEls[res.n];
+          segPath.classList.add('filled');
+          segPath.style.stroke = color;
+          piece.classList.remove('dragging');
+          piece.classList.add('gone');
+          piece.style.position = '';
+          dragCtx = null;
+          shapeFilled++;
+          if(shapeFilled >= SLOTS) step1Complete();
+          return;
+        } else {
+          settlePiece(piece, shardsFieldEl);
+          var ended1 = registerError();
+          dragCtx = null;
+          if(ended1) return;
+          return;
+        }
+      }
+      // lâché trop loin de toute boucle : pas de pénalité
+      settlePiece(piece, shardsFieldEl);
+      dragCtx = null;
+      return;
+    }
+
+    /* ---- ÉTAPE 2 : décodage, emplacements classiques (.dz) ---- */
+    dragCtx.moleculeEl.querySelectorAll('.dz').forEach(function(dz){ dz.classList.remove('hover'); });
+
+    // IMPORTANT : on doit détecter ce qu'il y a sous le doigt AVANT de redonner
+    // pointer-events à la pièce, sinon c'est la pièce elle-même (qui suit le
+    // doigt) qui est détectée à la place de l'emplacement (.dz) en dessous.
+    var under = document.elementFromPoint(x, y);
+    var dz = under ? under.closest('.dz') : null;
+
+    if(dz && !dz.classList.contains('filled')){
+      var slotNum = dz.dataset.slot;
+      if(String(piece.dataset.target) === String(slotNum)){
+        // correct placement
+        piece.classList.remove('dragging');
+        piece.classList.add('placed');
+        piece.style.position = '';
+        piece.style.left = '';
+        piece.style.top = '';
+        piece.style.width = '';
+        piece.style.height = '';
+        piece.style.transform = '';
+        dz.classList.add('filled');
+        dz.querySelector('.slotbar').style.borderColor = 'transparent';
+        dz.querySelector('.slotbar').style.boxShadow = '0 0 12px '+color;
+        dz.querySelector('.slotbar').appendChild(piece);
+        dragCtx = null;
+        codeFilled++;
+        if(codeFilled >= SLOTS) winGame();
+        return;
+      } else {
+        // wrong slot : on laisse le fragment où il a été lâché, juste une erreur
+        settlePiece(piece, shardsFieldEl);
+        var ended = registerError();
+        dragCtx = null;
+        if(ended) return;
+        return;
+      }
+    }
+    // lâché dans le vide : pas de pénalité, il reste où on l'a posé
+    settlePiece(piece, shardsFieldEl);
+    dragCtx = null;
+  }
+
+  // Ramène la pièce dans son conteneur d'origine (#shardsField) en convertissant
+  // sa position écran (fixed, viewport) en position absolute relative à ce
+  // conteneur. On ne la laisse PAS vivre définitivement dans <body> : sortie
+  // de .stage, elle perdait son contexte d'empilement normal et se
+  // retrouvait sous les calques .scan/.vignette (z-index 60-61), d'où
+  // l'aspect flou et le fait de ne plus pouvoir cliquer dessus — et comme
+  // buildStep1() ne vide que #shardsField, elle survivait aussi au
+  // redémarrage. On garde le "voyage" par <body> uniquement pendant le drag
+  // actif (nécessaire à cause du backdrop-filter de .stage).
+  function settlePiece(piece, shardsFieldEl){
+    // On mesure le CENTRE de la boîte telle qu'elle est là, maintenant
+    // (potentiellement agrandie pendant le glisser). Revenir à la taille
+    // naturelle en gardant le même left/top (coin haut-gauche) faisait
+    // "sauter" la pièce vers le haut-gauche à la dépose, puisque la boîte
+    // rétrécit soudainement autour de ce coin au lieu de son centre. En
+    // ancrant sur le centre, la pièce réapparaît à sa taille normale
+    // exactement là où on l'a lâchée.
+    var pieceRect = piece.getBoundingClientRect();
+    var centerX = pieceRect.left + pieceRect.width/2;
+    var centerY = pieceRect.top + pieceRect.height/2;
+    var natW = parseFloat(piece.dataset.natW) || pieceRect.width;
+    var natH = parseFloat(piece.dataset.natH) || pieceRect.height;
+
+    var containerRect = shardsFieldEl.getBoundingClientRect();
+    var relLeft = (centerX - natW/2) - containerRect.left;
+    var relTop = (centerY - natH/2) - containerRect.top;
+
+    piece.classList.remove('dragging');
+    piece.style.width = '';
+    piece.style.height = '';
+    piece.style.pointerEvents = '';
+    piece.style.transform = '';
+    piece.style.position = 'absolute';
+    piece.style.left = relLeft+'px';
+    piece.style.top = relTop+'px';
+    shardsFieldEl.appendChild(piece);
+  }
+
+  /* ================= GAME LIFECYCLE ================= */
+
+  function startGame(){
+    over = false;
+    transitioning = false;
+    lives = MAX_LIVES;
+    timeLeft = TIME_LIMIT;
+    nodeId.textContent = randomNodeId();
+
+    stepBadge.textContent = 'RECONSTRUCTION';
+    subtext.textContent = "Chaque boucle en pointillé indique déjà sa couleur, mais plusieurs fragments partagent la même teinte : seul un a la courbure exacte, les autres sont trop tordus. Comparez avant de poser.";
+    step1El.style.display = 'flex';
+    step2El.style.display = 'none';
+    codexBarEl.style.display = 'none';
+
+    winOverlay.classList.remove('show');
+    loseOverlay.classList.remove('show');
+
+    buildLives();
+    updateTimerUI();
+    buildStep1();
+
+    clearInterval(timerHandle);
+    timerHandle = setInterval(tick, 100);
+  }
+
+  window.startGame = startGame;
+
+  startGame();
+})();
+</script>
+
+</body>
+</html>
