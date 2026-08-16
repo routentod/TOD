@@ -58,20 +58,25 @@
   .scene{
     position:relative;
     width:100%; height:100vh;
-    background:#05070b;
+    background:
+      radial-gradient(circle at 50% 45%, #10151f, #05070b 70%);
     display:flex; align-items:center; justify-content:center;
     overflow:hidden;
+    padding:6vh 6vw;
+    box-sizing:border-box;
   }
   .map-frame{
     position:relative;
-    width:100%; height:100%;
-    max-width:calc(100vh * 1024 / 572);
-    max-height:calc(100vw * 572 / 1024);
+    width:min(80vw, calc(72vh * 1024 / 572), 1100px);
     aspect-ratio:1024/572;
     background-image:url('plateau-tod.png');
     background-size:cover;
     background-position:center;
-    margin:auto;
+    border-radius:14px;
+    box-shadow:
+      0 30px 70px rgba(0,0,0,0.55),
+      0 0 0 1px var(--line-strong),
+      0 0 40px rgba(34,230,255,0.06);
   }
 
   /* Mission giver marker */
