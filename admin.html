@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #12183c;
+  --ink: #f5f6fa;
+  --ink-dim: rgba(245, 246, 250, 0.62);
+  --metal-1: #ffffff;
+  --metal-2: #d7dbe6;
+  --metal-3: #9aa1b5;
+  --glass-bg: rgba(255, 255, 255, 0.07);
+  --glass-bg-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --danger: #ff9090;
+  --success: #8be6a8;
+  --font-display: "Manrope", "Segoe UI", sans-serif;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+
+  background-image:
+    radial-gradient(ellipse at center, rgba(10, 13, 34, 0) 40%, rgba(6, 8, 24, 0.55) 100%),
+    url("images/background.png");
+  background-color: var(--bg-deep);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+
+  min-height: 100vh;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 32px 32px;
+}
+
+/* ---- Barre du haut ---- */
+.topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand img {
+  width: 34px;
+  height: auto;
+}
+
+.brand span {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.clock {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 9px 16px;
+  border-radius: 999px;
+  min-width: 78px;
+  text-align: center;
+}
+
+.music-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 8px 14px 8px 10px;
+  border-radius: 999px;
+}
+
+.music-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.music-toggle-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.music-toggle-btn svg { width: 13px; height: 13px; }
+
+.music-volume {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 72px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+}
+
+.music-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--metal-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.music-volume::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border: none;
+  border-radius: 50%;
+  background: var(--metal-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--metal-1) 0%, var(--metal-2) 45%, var(--metal-3) 100%);
+  color: #1c2138;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 18px -8px rgba(0, 0, 0, 0.55);
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.logout-btn:hover { filter: brightness(1.05); }
+.logout-btn:active { transform: translateY(1px); }
+
+/* ---- Bouton menu (hamburger), affiché seulement en largeur réduite ---- */
+.topbar-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg);
+  color: var(--ink);
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.topbar-menu-btn:hover { background: var(--glass-bg-strong); }
+.topbar-menu-btn:active { transform: translateY(1px); }
+.topbar-menu-btn svg { width: 19px; height: 19px; }
+
+@media (max-width: 760px) {
+  .topbar-menu-btn { display: flex; }
+
+  /* Les boutons ne disparaissent pas : ils passent en liste déroulante,
+     ancrée sous le bouton menu, masquée tant qu'elle n'est pas ouverte. */
+  .topbar__right {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 50;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 220px;
+    padding: 14px;
+    border-radius: 16px;
+    background: var(--glass-bg-strong);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-6px);
+    transition: opacity 0.16s ease, visibility 0.16s ease, transform 0.16s ease;
+  }
+
+  .topbar__right.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .topbar__right .clock,
+  .topbar__right .new-defi-btn,
+  .topbar__right .music-control,
+  .topbar__right .logout-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ---- Layout 3 colonnes : 1.5 / 2 / 1.5 ---- */
+.board {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.5fr 2fr 1.5fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+}
+
+.panel__title {
+  margin: 0 0 18px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.panel__hint {
+  margin: -12px 0 16px;
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+/* ---- Classement ---- */
+.rank-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+}
+
+.rank-item__pos {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--metal-1), var(--metal-3));
+  color: #1c2138;
+  font-weight: 800;
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rank-item__name {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.rank-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.rank-item__score {
+  font-size: 12.5px;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.rank-item__dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ink-dim);
+  flex-shrink: 0;
+}
+
+.rank-item__montant {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--success);
+  white-space: nowrap;
+}
+
+/* ---- Timeline des défis ---- */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 6px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.timeline::-webkit-scrollbar { width: 6px; }
+.timeline::-webkit-scrollbar-track { background: transparent; }
+.timeline::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 999px;
+}
+.timeline::-webkit-scrollbar-thumb:hover { background: var(--metal-3); }
+.timeline {
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border) transparent;
+}
+
+.defi-item {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.defi-item:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.defi-item__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.defi-item__titre {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.defi-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.defi-item__montant {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--metal-2);
+}
+
+.defi-item__timer {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+}
+
+.defi-item__timer--attente { color: var(--ink-dim); font-weight: 600; }
+.defi-item__timer--termine { color: var(--danger); border-color: rgba(255, 144, 144, 0.35); }
+
+.defi-item__joueurs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.joueur-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--ink);
+}
+
+/* ---- Comptes par catégorie ---- */
+.compte-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 8px 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.compte-tag:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.compte-tag__del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  color: var(--ink-dim);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.compte-tag__del:hover {
+  background: rgba(255, 144, 144, 0.18);
+  color: var(--danger);
+}
+
+.compte-tag__del svg { width: 10px; height: 10px; display: block; }
+
+/* ---- (styles hérités "account-item", encore utilisés par la modale Catégories) ---- */
+.account-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 6px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+/* Scrollbar fine, dans le thème, sans flèches */
+.account-list::-webkit-scrollbar {
+  width: 6px;
+}
+.account-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.account-list::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 999px;
+}
+.account-list::-webkit-scrollbar-thumb:hover {
+  background: var(--metal-3);
+}
+.account-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border) transparent;
+}
+
+.account-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+}
+
+.account-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.account-item__name {
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-item__date {
+  font-size: 11.5px;
+  color: var(--ink-dim);
+}
+
+.account-item__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.account-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.account-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.account-action-btn:hover {
+  background: var(--glass-bg);
+  color: var(--ink);
+}
+
+.account-action-btn--danger:hover {
+  background: rgba(255, 144, 144, 0.14);
+  color: var(--danger);
+}
+
+.account-action-btn svg { width: 14px; height: 14px; }
+
+/* ---- Bouton "Nouveau défi" ---- */
+.new-defi-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass-bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: filter 0.15s ease, transform 0.1s ease, background 0.15s ease;
+}
+
+.new-defi-btn:hover { background: var(--glass-bg-strong); }
+.new-defi-btn:active { transform: translateY(1px); }
+
+/* ---- Modale "Nouveau défi" ---- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 9, 26, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  z-index: 40;
+}
+
+.modal-backdrop.open { opacity: 1; visibility: visible; }
+
+.modal-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 26px;
+  border-radius: 20px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  z-index: 41;
+}
+
+.modal-panel.open { opacity: 1; visibility: visible; pointer-events: auto; }
+
+.modal-panel__title {
+  margin: 0 0 18px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+}
+
+#defi-form,
+#joueur-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#edit-joueur-form,
+#categorie-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field__label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+}
+
+.field__hint {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--ink-dim);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(6, 9, 26, 0.38);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+}
+
+.field select { cursor: pointer; }
+.field select option { background: #1a2050; color: var(--ink); }
+
+.field input:focus,
+.field select:focus { border-color: var(--metal-2); }
+
+.field-row { display: flex; gap: 12px; }
+.field-row .field { flex: 1; }
+
+.categorie-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.categorie-tag {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+}
+
+.categorie-tag:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: var(--ink);
+}
+
+.categorie-tag:active { transform: translateY(1px); }
+
+.categorie-tag.active {
+  background: linear-gradient(180deg, var(--metal-1) 0%, var(--metal-2) 45%, var(--metal-3) 100%);
+  border-color: var(--metal-1);
+  color: #1c2138;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.modal-submit-btn {
+  padding: 13px 16px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--metal-1) 0%, var(--metal-2) 45%, var(--metal-3) 100%);
+  color: #1c2138;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.modal-submit-btn:disabled { opacity: 0.6; cursor: progress; }
+
+.modal-cancel-btn {
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.modal-cancel-btn:hover { background: var(--glass-bg-strong); }
+
+.modal-danger-btn {
+  padding: 13px 16px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ff9d9d 0%, #ff5c6a 100%);
+  color: #340a0a;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.confirm-modal-message {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+
+.modal-message { font-size: 13px; margin: 0; }
+.modal-message--error { color: #ff9090; }
+.modal-message--success { color: #8be6a8; }
+
+/* ---- Modale "Galerie & récap" d'un défi ---- */
+.preuve-section-title {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.preuve-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 0 0 22px;
+}
+
+.preuve-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.preuve-card__media {
+  width: 100%;
+  height: 92px;
+  object-fit: cover;
+  display: block;
+  background: rgba(6, 9, 26, 0.4);
+}
+
+.preuve-card__media--lien {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-dim);
+}
+
+.preuve-card__media--lien svg { width: 22px; height: 22px; }
+
+.preuve-card__nom {
+  padding: 7px 9px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preuve-empty {
+  margin: 0 0 22px;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+
+.recap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.recap-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.recap-item__badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.recap-item__badge--ok {
+  color: var(--success);
+  background: rgba(139, 230, 168, 0.14);
+  border: 1px solid rgba(139, 230, 168, 0.4);
+}
+
+.recap-item__badge--manquant {
+  color: var(--danger);
+  background: rgba(255, 144, 144, 0.14);
+  border: 1px solid rgba(255, 144, 144, 0.4);
+}
+
+.preuve-card {
+  font-family: var(--font-body);
+  text-align: left;
+}
+
+/* ---- Visionneuse plein écran (image en grand / vidéo avec contrôles) ---- */
+.lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 9, 26, 0.82);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  z-index: 60;
+}
+
+.lightbox-backdrop.open { opacity: 1; visibility: visible; }
+
+.lightbox {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 1000px);
+  max-height: 90vh;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  z-index: 61;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox.open { opacity: 1; visibility: visible; pointer-events: auto; }
+
+.lightbox__content {
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox__content img,
+.lightbox__content video {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 14px;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.7);
+  display: block;
+}
+
+.lightbox__close {
+  position: fixed;
+  top: 22px;
+  right: 26px;
+  z-index: 62;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass-bg-strong);
+  color: var(--ink);
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.lightbox__close svg { width: 18px; height: 18px; }
+.lightbox__close:hover { background: var(--glass-bg); }
+
+.modal-panel__subtitle {
+  margin: -12px 0 14px;
+  font-size: 12.5px;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+
+/* ---- Champ identifiant (lecture seule) dans la modale de modification ---- */
+.field-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(6, 9, 26, 0.25);
+  color: var(--ink-dim);
+}
+
+.field-display span {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.field-display svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--ink-dim);
+}
+
+/* ---- Champ mot de passe avec bouton afficher/masquer ---- */
+.field__password {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field__password input {
+  padding-right: 42px;
+}
+
+.field-password-toggle {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+
+.field-password-toggle:hover { color: var(--ink); }
+.field-password-toggle svg { width: 17px; height: 17px; display: block; }
+
+@media (max-width: 900px) {
+  .board {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+
+  <div class="page">
+
+    <div class="topbar">
+      <div class="brand">
+        <img src="images/logo admin.png" alt="Logo">
+        <span>Espace admin</span>
+      </div>
+      <div class="topbar__right" id="topbar-right">
+        <button id="new-joueur-btn" class="new-defi-btn" type="button">+ Nouveau joueur</button>
+        <button id="categories-btn" class="new-defi-btn" type="button">Catégories</button>
+        <button id="new-defi-btn" class="new-defi-btn" type="button">+ Nouveau défi</button>
+        <div class="music-control" id="music-control">
+          <button id="music-toggle-btn" class="music-toggle-btn" type="button" aria-label="Lancer la musique">
+            <svg id="music-icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+            <svg id="music-icon-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          </button>
+          <input type="range" id="music-volume" class="music-volume" min="0" max="100" value="35" aria-label="Volume de la musique">
+        </div>
+        <!-- Lecteur YouTube discret (1x1px), piloté par les contrôles ci-dessus.
+             On ne peut pas héberger l'audio directement (droits d'auteur) :
+             on passe par le lecteur officiel YouTube en arrière-plan. -->
+        <div id="yt-player-container" style="position:fixed; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none;">
+          <div id="yt-player"></div>
+        </div>
+        <div id="clock" class="clock">--:--</div>
+        <button id="logout-btn" class="logout-btn" type="button">Déconnexion</button>
+      </div>
+
+      <button id="topbar-menu-btn" class="topbar-menu-btn" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="topbar-right">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="7" x2="20" y2="7"></line>
+          <line x1="4" y1="12" x2="20" y2="12"></line>
+          <line x1="4" y1="17" x2="20" y2="17"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="board">
+
+      <!-- 1. Classement (1.5/5) -->
+      <section class="panel">
+        <h2 class="panel__title">Classement</h2>
+        <p class="panel__hint">Comptes ayant fait le plus d'actions</p>
+        <ul class="rank-list" id="rank-list">
+          <!-- Rempli dynamiquement par admin.js -->
+        </ul>
+      </section>
+
+      <!-- 2. Timeline (2/5) -->
+      <section class="panel">
+        <h2 class="panel__title">Timeline des actions</h2>
+        <p class="panel__hint">Tous les défis créés, du plus récent au plus ancien</p>
+        <ul class="timeline" id="timeline-list">
+          <!-- Rempli dynamiquement par admin.js -->
+        </ul>
+      </section>
+
+      <!-- 3. Comptes par catégorie (1.5/5) -->
+      <section class="panel">
+        <h2 class="panel__title">Comptes par catégorie</h2>
+        <p class="panel__hint">Joueurs regroupés par catégorie</p>
+        <ul class="timeline" id="account-list">
+          <!-- Rempli dynamiquement par admin.js -->
+        </ul>
+      </section>
+
+    </div>
+
+  </div>
+
+  <!-- Modale "Nouveau défi" -->
+  <div class="modal-backdrop" id="defi-modal-backdrop"></div>
+
+  <div class="modal-panel" id="defi-modal">
+    <h2 class="modal-panel__title">Nouveau défi</h2>
+
+    <form id="defi-form">
+      <div class="field">
+        <span class="field__label">Titre</span>
+        <input type="text" id="defi-titre-input" placeholder="Titre du défi" required>
+      </div>
+
+      <div class="field-row">
+        <label class="field">
+          <span class="field__label">Montant ($)</span>
+          <input type="number" id="defi-montant-input" min="0" step="1" placeholder="0" required>
+        </label>
+        <label class="field">
+          <span class="field__label">Heures</span>
+          <input type="number" id="defi-heures-input" min="0" step="1" value="0">
+        </label>
+        <label class="field">
+          <span class="field__label">Minutes</span>
+          <input type="number" id="defi-minutes-input" min="0" max="59" step="1" value="0">
+        </label>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Catégories concernées</span>
+        <div class="categorie-tags" id="defi-categorie-tags"></div>
+      </div>
+
+      <p id="defi-form-message" class="modal-message" hidden></p>
+
+      <button type="submit" class="modal-submit-btn" id="defi-submit-btn">Créer le défi</button>
+    </form>
+  </div>
+
+  <!-- Modale "Nouveau joueur" -->
+  <div class="modal-backdrop" id="joueur-modal-backdrop"></div>
+
+  <div class="modal-panel" id="joueur-modal">
+    <h2 class="modal-panel__title">Nouveau compte joueur</h2>
+
+    <form id="joueur-form">
+      <div class="field">
+        <span class="field__label">Identifiant</span>
+        <input type="text" id="nv-identifiant-input" placeholder="joueur03" autocomplete="off" required>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Identité (visible admin uniquement)</span>
+        <input type="text" id="nv-identite-input" placeholder="Nom / prénom réel" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <span class="field__label">Mot de passe</span>
+        <input type="password" id="nv-motdepasse-input" placeholder="mot de passe" autocomplete="new-password" minlength="6" required>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Catégorie</span>
+        <div class="categorie-tags" id="nv-categorie-tags"></div>
+      </div>
+
+      <p id="joueur-form-message" class="modal-message" hidden></p>
+
+      <button type="submit" class="modal-submit-btn" id="joueur-submit-btn">Créer le compte</button>
+    </form>
+  </div>
+
+  <!-- Modale "Modifier le compte joueur" -->
+  <div class="modal-backdrop" id="edit-joueur-modal-backdrop"></div>
+
+  <div class="modal-panel" id="edit-joueur-modal">
+    <h2 class="modal-panel__title">Modifier le compte</h2>
+    <p class="modal-panel__subtitle">Change la catégorie et/ou le mot de passe de ce joueur. L'identifiant ne peut pas être changé.</p>
+
+    <form id="edit-joueur-form">
+      <div class="field">
+        <span class="field__label">Identifiant</span>
+        <div class="field-display">
+          <span id="ev-identifiant-display"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <input type="hidden" id="ev-identifiant-input">
+      </div>
+
+      <div class="field">
+        <span class="field__label">Catégorie</span>
+        <div class="categorie-tags" id="ev-categorie-tags"></div>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Nouveau mot de passe</span>
+        <div class="field__password">
+          <input type="password" id="ev-motdepasse-input" placeholder="laisser vide pour ne pas changer" autocomplete="new-password" minlength="6">
+          <button type="button" class="field-password-toggle" id="ev-toggle-password" aria-label="Afficher le mot de passe">
+            <svg id="ev-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="ev-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a19.8 19.8 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <p id="edit-joueur-form-message" class="modal-message" hidden></p>
+
+      <button type="submit" class="modal-submit-btn" id="edit-joueur-submit-btn">Enregistrer</button>
+    </form>
+  </div>
+
+  <!-- Modale "Catégories" -->
+  <div class="modal-backdrop" id="categories-modal-backdrop"></div>
+
+  <div class="modal-panel" id="categories-modal">
+    <h2 class="modal-panel__title">Catégories</h2>
+
+    <form id="categorie-form">
+      <div class="field-row">
+        <label class="field" style="flex:2">
+          <span class="field__label">Nouvelle catégorie</span>
+          <input type="text" id="nc-nom-input" placeholder="Nom de la catégorie" required>
+        </label>
+        <div class="field" style="justify-content:flex-end">
+          <button type="submit" class="modal-submit-btn" id="categorie-submit-btn">Créer</button>
+        </div>
+      </div>
+
+      <p id="categorie-form-message" class="modal-message" hidden></p>
+
+      <div class="field">
+        <span class="field__label">Catégories existantes</span>
+        <ul class="account-list" id="categories-list" style="max-height:260px">
+          <!-- Rempli dynamiquement par admin.js -->
+        </ul>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modale "Galerie & récap" d'un défi -->
+  <div class="modal-backdrop" id="preuves-modal-backdrop"></div>
+
+  <div class="modal-panel" id="preuves-modal">
+    <h2 class="modal-panel__title" id="preuves-modal-titre">Défi</h2>
+
+    <h3 class="preuve-section-title">Galerie</h3>
+    <div class="preuve-grid" id="preuve-grid"></div>
+    <p class="preuve-empty" id="preuve-empty" hidden>Aucun média envoyé pour l'instant.</p>
+
+    <h3 class="preuve-section-title">Récap des joueurs</h3>
+    <ul class="recap-list" id="recap-list"></ul>
+  </div>
+
+  <!-- Visionneuse (image en grand / vidéo avec contrôles) -->
+  <div class="lightbox-backdrop" id="lightbox-backdrop"></div>
+
+  <div class="lightbox" id="lightbox">
+    <button type="button" class="lightbox__close" id="lightbox-close" aria-label="Fermer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="lightbox__content" id="lightbox-content"></div>
+  </div>
+
+  <!-- Modale de confirmation générique (remplace les confirm() natifs) -->
+  <div class="modal-backdrop" id="confirm-modal-backdrop"></div>
+  <div class="modal-panel" id="confirm-modal" style="width:min(380px, 92vw);">
+    <h2 class="modal-panel__title" id="confirm-modal-title">Confirmer</h2>
+    <p class="confirm-modal-message" id="confirm-modal-message"></p>
+    <div class="confirm-modal-actions">
+      <button type="button" class="modal-cancel-btn" id="confirm-modal-cancel">Annuler</button>
+      <button type="button" class="modal-danger-btn" id="confirm-modal-ok">Supprimer</button>
+    </div>
+  </div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script type="module" src="admin.js"></script>
+  <script>
+    // ---- Menu hamburger responsive (topbar) ----
+    (function () {
+      const menuBtn = document.getElementById("topbar-menu-btn");
+      const rightMenu = document.getElementById("topbar-right");
+
+      function closeMenu() {
+        rightMenu.classList.remove("open");
+        menuBtn.setAttribute("aria-expanded", "false");
+      }
+
+      function toggleMenu() {
+        const isOpen = rightMenu.classList.toggle("open");
+        menuBtn.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      menuBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleMenu();
+      });
+
+      // Clic sur un des boutons du menu : on referme après l'action.
+      rightMenu.addEventListener("click", (event) => {
+        if (event.target.closest("button")) closeMenu();
+      });
+
+      // Clic en dehors du menu : fermeture.
+      document.addEventListener("click", (event) => {
+        if (!rightMenu.contains(event.target) && event.target !== menuBtn) {
+          closeMenu();
+        }
+      });
+
+      // Touche Échap : fermeture.
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeMenu();
+      });
+
+      // Repasse en affichage normal (boutons visibles) si on repasse en grand écran.
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 760) closeMenu();
+      });
+    })();
+  </script>
+</body>
+</html>
