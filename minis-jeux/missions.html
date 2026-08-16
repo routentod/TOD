@@ -69,7 +69,7 @@
     position:relative;
     width:min(80vw, calc(72vh * 1024 / 572), 1100px);
     aspect-ratio:1024/572;
-    background-image:url('img-missions/plateau-tod.png');
+    background-image:url('plateau-tod.png');
     background-size:cover;
     background-position:center;
     border-radius:14px;
@@ -231,7 +231,7 @@
   .alarm-box{
     width:400px; aspect-ratio:1/1; margin:0 auto 20px;
     position:relative;
-    background-image:url('img-missions/alarm.png');
+    background-image:url('alarm.png');
     background-size:cover; background-position:center;
     border-radius:20px;
     filter:drop-shadow(0 0 22px rgba(255,45,107,0.22));
@@ -259,7 +259,7 @@
 
   .building{
     width:440px; aspect-ratio:408/546; margin:0 auto 18px;
-    background-image:url('img-missions/immeuble.png');
+    background-image:url('immeuble.png');
     background-size:cover; background-position:center;
     border-radius:4px;
     position:relative;
@@ -770,7 +770,7 @@ function renderMemory(mission){
   const statusEl = document.getElementById('memory-status');
   const timebar = document.getElementById('timebar');
   const mistakesText = document.getElementById('mistakes-text');
-  // positions calées sur les fenêtres réelles de img-missions/immeuble.jpg
+  // positions calées sur les fenêtres réelles de assets/immeuble.jpg
   // (les 2 colonnes de chaque tour, on saute la colonne centrale = cage d'escalier)
   const WINDOW_COLS = [8.2, 19.9, 30.0, 42.0, 57.8, 70.2, 80.3, 91.9];
   const WINDOW_ROWS = [29.6, 43.0, 56.9, 70.6];
@@ -1064,7 +1064,7 @@ function renderColorStage(container, subEl, panelConfig, isRunning, onSuccess, o
 
   container.innerHTML = `
     <div class="color-sequence" id="color-sequence"></div>
-    <div class="panel-box" id="color-box" style="background-image:url('img-missions/boitier-couleur.png')"></div>
+    <div class="panel-box" id="color-box" style="background-image:url('boitier-couleur.png')"></div>
   `;
 
   const seqEl = document.getElementById('color-sequence');
@@ -1161,7 +1161,7 @@ function renderBinaryStage(container, subEl, panelConfig, isRunning, onSuccess, 
   subEl.textContent = 'Reproduisez le code binaire affiché avec les interrupteurs';
 
   container.innerHTML = `
-    <div class="panel-box" id="binary-box" style="background-image:url('img-missions/boitier-binaire.png')">
+    <div class="panel-box" id="binary-box" style="background-image:url('boitier-binaire.png')">
       <div class="binary-screen" id="binary-screen" style="left:25.7%; top:22.4%; width:47.5%; height:26%;"></div>
     </div>
     <button class="btn-lockpick" id="binary-validate" style="margin-top:14px;">Valider</button>
@@ -1231,7 +1231,7 @@ function renderCodeStage(container, subEl, panelConfig, isRunning, onSuccess, on
   ];
 
   container.innerHTML = `
-    <div class="panel-box" id="code-box" style="background-image:url('img-missions/boitier-code.png')">
+    <div class="panel-box" id="code-box" style="background-image:url('boitier-code.png')">
       <div class="code-screen" id="code-screen" style="left:23.8%; top:20.2%; width:52.4%; height:13.1%;">
         <span class="code-screen-text" id="code-screen-text"></span>
       </div>
