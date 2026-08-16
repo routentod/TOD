@@ -320,8 +320,15 @@
     border-radius:50%; padding:0; transition:box-shadow .15s ease, border-color .15s ease;
   }
   .panel-hotspot:disabled{ cursor:default; }
-  .panel-hotspot.hs-correct{ border-color:var(--green); box-shadow:0 0 12px 2px rgba(61,220,132,0.7); }
-  .panel-hotspot.hs-wrong{ border-color:var(--red); box-shadow:0 0 12px 2px rgba(255,77,77,0.7); }
+  .panel-hotspot.hs-magenta{ border-color:var(--magenta); color:var(--magenta); box-shadow:0 0 9px 2px currentColor; }
+  .panel-hotspot.hs-cyan{ border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 9px 2px currentColor; }
+  .panel-hotspot.hs-green{ border-color:var(--green); color:var(--green); box-shadow:0 0 9px 2px currentColor; }
+  .panel-hotspot.hs-amber{ border-color:var(--amber); color:var(--amber); box-shadow:0 0 9px 2px currentColor; }
+  .panel-hotspot.hs-magenta:hover, .panel-hotspot.hs-cyan:hover, .panel-hotspot.hs-green:hover, .panel-hotspot.hs-amber:hover{
+    box-shadow:0 0 14px 4px currentColor;
+  }
+  button.panel-hotspot.hs-correct{ border-color:var(--green); color:var(--green); box-shadow:0 0 16px 5px rgba(61,220,132,0.85); }
+  button.panel-hotspot.hs-wrong{ border-color:var(--red); color:var(--red); box-shadow:0 0 16px 5px rgba(255,77,77,0.85); }
 
   .color-sequence{ display:flex; justify-content:center; gap:16px; margin-bottom:16px; }
   .color-dot{
@@ -1049,10 +1056,10 @@ function renderColorStage(container, subEl, panelConfig, isRunning, onSuccess, o
     { cls: 'c-amber' }
   ];
   const HOTSPOTS = [
-    { x: 71.3, y: 23.0 },
+    { x: 71.3, y: 23.2 },
     { x: 71.3, y: 41.1 },
-    { x: 71.3, y: 57.7 },
-    { x: 71.3, y: 76.2 }
+    { x: 71.3, y: 57.8 },
+    { x: 71.3, y: 75.7 }
   ];
 
   container.innerHTML = `
@@ -1071,11 +1078,11 @@ function renderColorStage(container, subEl, panelConfig, isRunning, onSuccess, o
 
   const hotspotBtns = HOTSPOTS.map((h, idx) => {
     const btn = document.createElement('button');
-    btn.className = 'panel-hotspot';
+    btn.className = 'panel-hotspot hs-' + COLORS[idx].cls.replace('c-', '');
     btn.style.left = h.x + '%';
     btn.style.top = h.y + '%';
-    btn.style.width = '13%';
-    btn.style.height = '13%';
+    btn.style.width = '11.5%';
+    btn.style.height = '11.5%';
     btn.disabled = true;
     btn.addEventListener('click', () => handleClick(idx));
     boxEl.appendChild(btn);
