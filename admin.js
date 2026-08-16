@@ -57,7 +57,7 @@ const role = sessionStorage.getItem("role");
 if (role !== "admin") {
   window.location.href = "index.html";
 } else if (sessionStorage.getItem("acces_verifie") !== "1") {
-  window.location.href = "hack.html";
+  window.location.href = "minis-jeux/hack.html";
 }
 
 // ---- Horloge en temps réel ----
