@@ -69,7 +69,7 @@
     position:relative;
     width:min(80vw, calc(72vh * 1024 / 572), 1100px);
     aspect-ratio:1024/572;
-    background-image:url('plateau-tod.png');
+    background-image:url('img-missions/plateau-tod.png');
     background-size:cover;
     background-position:center;
     border-radius:14px;
@@ -231,7 +231,7 @@
   .alarm-box{
     width:400px; aspect-ratio:1/1; margin:0 auto 20px;
     position:relative;
-    background-image:url('alarm.png');
+    background-image:url('img-missions/alarm.png');
     background-size:cover; background-position:center;
     border-radius:20px;
     filter:drop-shadow(0 0 22px rgba(255,45,107,0.22));
@@ -259,7 +259,7 @@
 
   .building{
     width:440px; aspect-ratio:408/546; margin:0 auto 18px;
-    background-image:url('immeuble.png');
+    background-image:url('img-missions/immeuble.png');
     background-size:cover; background-position:center;
     border-radius:4px;
     position:relative;
@@ -284,6 +284,76 @@
   .window-btn.correct{ background-color:rgba(61,220,132,0.55); border-color:var(--green); box-shadow:0 0 10px 2px rgba(61,220,132,0.7); }
   .window-btn.wrong{ background-color:rgba(255,77,77,0.55); border-color:var(--red); box-shadow:0 0 10px 2px rgba(255,77,77,0.7); }
   .memory-status{ font-size:15px; color:var(--cyan); margin:0 0 14px; min-height:18px; }
+
+  /* Infiltration */
+  .suspicion-track{
+    width:100%; height:6px; background:var(--bg-card); border-radius:3px; overflow:hidden;
+    margin:-8px 0 16px; border:1px solid var(--line);
+  }
+  .suspicion-fill{
+    height:100%; width:0%; background:var(--green);
+    transition:width .15s linear, background .3s ease;
+  }
+  .infil-map{
+    position:relative; width:100%; max-width:700px; aspect-ratio:1113/607;
+    margin:0 auto 14px; border-radius:8px; overflow:hidden;
+    background-size:cover; background-position:center;
+    border:1px solid var(--line-strong);
+    box-shadow:0 10px 30px -10px rgba(0,0,0,0.6);
+  }
+  .infil-player, .infil-guard{
+    position:absolute; top:0; left:0;
+    width:26px; height:26px; margin:-13px 0 0 -13px;
+    will-change:transform;
+  }
+  .infil-player{
+    background:var(--cyan); border-radius:50%;
+    box-shadow:0 0 10px 4px rgba(34,230,255,0.65), 0 0 0 2px rgba(255,255,255,0.5) inset;
+    z-index:5;
+  }
+  .infil-player.carrying{ background:var(--amber); box-shadow:0 0 12px 5px rgba(255,179,71,0.7), 0 0 0 2px rgba(255,255,255,0.5) inset; }
+  .infil-guard{
+    width:34px; height:34px; margin:-17px 0 0 -17px;
+    background-image:url('img-missions/cambu-guard.png');
+    background-size:contain; background-repeat:no-repeat; background-position:center bottom;
+    z-index:4;
+  }
+  .infil-cone{
+    position:absolute; top:0; left:0;
+    width:2px; height:2px;
+    pointer-events:none; z-index:3;
+    will-change:transform;
+  }
+  .infil-cone::after{
+    content:''; position:absolute; left:calc(-1 * var(--cone-half, 130px)); top:0;
+    width:0; height:0;
+    border-left:var(--cone-half, 130px) solid transparent;
+    border-right:var(--cone-half, 130px) solid transparent;
+    border-bottom:var(--cone-range, 260px) solid rgba(255,77,77,0.22);
+    transform-origin:50% 0%;
+  }
+  .infil-cone.alert::after{ border-bottom-color:rgba(255,77,77,0.4); }
+  .infil-prompt{
+    position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+    background:rgba(6,9,20,0.88); border:1px solid var(--cyan);
+    color:var(--cyan); font-family:var(--font-display); font-weight:600;
+    font-size:12.5px; letter-spacing:0.4px; text-transform:uppercase;
+    padding:8px 16px; border-radius:999px; white-space:nowrap;
+    z-index:6;
+  }
+  .infil-floor-label{
+    position:absolute; top:10px; left:12px;
+    font-family:var(--font-display); font-weight:600; font-size:12px;
+    letter-spacing:0.5px; text-transform:uppercase;
+    color:var(--text-dim); background:rgba(6,9,20,0.7);
+    padding:4px 10px; border-radius:4px; z-index:6;
+  }
+  .infil-flash{
+    position:absolute; inset:0; background:rgba(255,45,45,0.35);
+    opacity:0; pointer-events:none; z-index:7;
+  }
+  .infil-flash.show{ opacity:1; transition:opacity .08s ease; }
+  .infil-flash:not(.show){ transition:opacity .5s ease; }
 
   .btn-lockpick{
     font-family:var(--font-display); font-weight:700; font-size:17px;
@@ -440,8 +510,8 @@ const MISSIONS = [
     desc: "Un pavillon isolé, peu surveillé. La porte arrière a une serrure vieillissante à plusieurs gorges. Crochetez-la sans vous faire remarquer.",
     game: "lockpick",
     pins: 6,
-    timeLimit: 75,
-    maxMistakes: 3
+    timeLimit: 80,
+    maxMistakes: 4
   },
   {
     id: 2,
@@ -481,8 +551,39 @@ const MISSIONS = [
     duration: "≈ 3 min",
     reward: 950,
     desc: "Deux gardes patrouillent la propriété sur trois niveaux. Récupérez l'objet dans le bureau et ressortez sans déclencher d'alerte.",
-    game: "soon",
-    pins: 0
+    game: "infiltration",
+    timeLimit: 180,
+    floors: [
+      {
+        name: "Rez-de-chaussée",
+        img: "img-missions/cambu-rdc.png",
+        entrance: { x: 50.0, y: 78.2 },
+        stairs: [ { x: 67.6, y: 53.9, to: 1, dir: "up" } ],
+        guard: {
+          waypoints: [ {x:44,y:16}, {x:88,y:16}, {x:88,y:34}, {x:44,y:34} ],
+          speed: 130, pauseMin: 800, pauseMax: 2200
+        }
+      },
+      {
+        name: "Premier étage",
+        img: "img-missions/cambu-floor1.png",
+        stairs: [
+          { x: 38.2, y: 60.9, to: 0, dir: "down" },
+          { x: 67.6, y: 54.2, to: 2, dir: "up" }
+        ],
+        guard: {
+          waypoints: [ {x:14,y:22}, {x:52,y:22}, {x:90,y:30}, {x:52,y:22} ],
+          speed: 145, pauseMin: 600, pauseMax: 1800
+        }
+      },
+      {
+        name: "Bureau — étage 2",
+        img: "img-missions/cambu-floor2.png",
+        stairs: [ { x: 38.1, y: 62.2, to: 1, dir: "down" } ],
+        safe: { x: 65.9, y: 32.4 },
+        guard: null
+      }
+    ]
   },
   {
     id: 5,
@@ -572,6 +673,7 @@ function startMission(mission){
   if (mission.game === 'lockpick') renderLockpick(mission);
   if (mission.game === 'memory') renderMemory(mission);
   if (mission.game === 'alarm') renderAlarm(mission);
+  if (mission.game === 'infiltration') renderInfiltration(mission);
 }
 
 gameOverlay.addEventListener('click', (e) => {
@@ -592,8 +694,10 @@ function renderLockpick(mission){
       <div class="lock-dial">
         <svg viewBox="0 0 100 100">
           <path class="lock-zone-arc" id="lock-zone" d=""></path>
-          <line class="lock-needle-line" id="lock-needle" x1="49.3" y1="24.4" x2="49.3" y2="49.8"></line>
-          <circle class="lock-needle-tip" id="lock-needle-tip" cx="49.3" cy="24.4" r="2.4"></circle>
+          <g id="lock-needle-group" style="transform-box:view-box; transform-origin:49.3px 49.8px;">
+            <line class="lock-needle-line" x1="49.3" y1="42.3" x2="49.3" y2="24.4"></line>
+            <circle class="lock-needle-tip" cx="49.3" cy="24.4" r="2.4"></circle>
+          </g>
         </svg>
       </div>
     </div>
@@ -620,8 +724,7 @@ function renderLockpick(mission){
   let zoneMin, zoneMax;
   let running = true;
 
-  const needle = document.getElementById('lock-needle');
-  const needleTip = document.getElementById('lock-needle-tip');
+  const needleGroup = document.getElementById('lock-needle-group');
   const zoneEl = document.getElementById('lock-zone');
   const timebar = document.getElementById('timebar');
   const mistakesText = document.getElementById('mistakes-text');
@@ -635,14 +738,14 @@ function renderLockpick(mission){
   }
 
   function newZone(){
-    const width = Math.max(14, 26 - currentPin * 2);
+    const width = Math.max(18, 30 - currentPin * 2);
     const min = Math.random() * (360 - width);
     zoneMin = min;
     zoneMax = min + width;
     const pMin = polar(zoneMin, DIAL_R);
     const pMax = polar(zoneMax, DIAL_R);
     zoneEl.setAttribute('d', `M${pMin.x},${pMin.y} A${DIAL_R},${DIAL_R} 0 0,1 ${pMax.x},${pMax.y}`);
-    speed = 3.2 + currentPin * 0.8;
+    speed = 1.8 + currentPin * 0.35;
   }
   newZone();
 
@@ -655,14 +758,7 @@ function renderLockpick(mission){
 
     // speed reste "en degrés par frame à 60fps" comme avant, mais calé sur le temps réel
     angle = (angle + speed * 60 * dt) % 360;
-    const p = polar(angle, DIAL_R);
-    const pInner = polar(angle, 7.5);
-    needle.setAttribute('x1', pInner.x);
-    needle.setAttribute('y1', pInner.y);
-    needle.setAttribute('x2', p.x);
-    needle.setAttribute('y2', p.y);
-    needleTip.setAttribute('cx', p.x);
-    needleTip.setAttribute('cy', p.y);
+    needleGroup.style.transform = `rotate(${angle}deg)`;
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -770,7 +866,7 @@ function renderMemory(mission){
   const statusEl = document.getElementById('memory-status');
   const timebar = document.getElementById('timebar');
   const mistakesText = document.getElementById('mistakes-text');
-  // positions calées sur les fenêtres réelles de assets/immeuble.jpg
+  // positions calées sur les fenêtres réelles de img-missions/immeuble.jpg
   // (les 2 colonnes de chaque tour, on saute la colonne centrale = cage d'escalier)
   const WINDOW_COLS = [8.2, 19.9, 30.0, 42.0, 57.8, 70.2, 80.3, 91.9];
   const WINDOW_ROWS = [29.6, 43.0, 56.9, 70.6];
@@ -1047,6 +1143,327 @@ function renderAlarm(mission){
   }
 }
 
+/* --- Mission 4 : infiltration multi-étages --- */
+function renderInfiltration(mission){
+  const MAP_W = 1000;
+  const MAP_H = 1000 * 607 / 1113;
+  const PLAYER_SPEED = 260;      // unités/s
+  const CATCH_RANGE = 300;       // portée du cône (unités)
+  const CATCH_HALF_ANGLE = 26;   // degrés
+  const SUSPICION_RATE = 42;     // /s quand repéré
+  const SUSPICION_DECAY = 32;    // /s quand hors de vue
+  const TRIGGER_RADIUS = 34;     // distance pour déclencher escalier/coffre/sortie
+
+  gamePanel.innerHTML = `
+    <h2 class="game-title">${mission.title}</h2>
+    <p class="game-sub" id="infil-sub">Déplacez-vous avec les flèches ou ZQSD. Restez hors des cônes de vision des gardes.</p>
+    <div class="timebar-track"><div class="timebar-fill" id="timebar"></div></div>
+    <div class="suspicion-track"><div class="suspicion-fill" id="suspicion-fill"></div></div>
+    <div class="infil-map" id="infil-map">
+      <div class="infil-floor-label" id="infil-floor-label"></div>
+      <div class="infil-cone" id="infil-cone" style="display:none"></div>
+      <div class="infil-guard" id="infil-guard" style="display:none"></div>
+      <div class="infil-player" id="infil-player"></div>
+      <div class="infil-prompt" id="infil-prompt" hidden></div>
+      <div class="infil-flash" id="infil-flash"></div>
+    </div>
+    <div class="mistakes" id="mistakes-text"></div>
+  `;
+
+  const mapEl = document.getElementById('infil-map');
+  const floorLabel = document.getElementById('infil-floor-label');
+  const playerEl = document.getElementById('infil-player');
+  const guardEl = document.getElementById('infil-guard');
+  const coneEl = document.getElementById('infil-cone');
+  const promptEl = document.getElementById('infil-prompt');
+  const flashEl = document.getElementById('infil-flash');
+  const subEl = document.getElementById('infil-sub');
+  const timebar = document.getElementById('timebar');
+  const statusText = document.getElementById('mistakes-text');
+
+  let mapRect = { width: 700, height: 700 * MAP_H / MAP_W };
+  function refreshRect(){
+    const r = mapEl.getBoundingClientRect();
+    if (r.width > 0) mapRect = { width: r.width, height: r.height };
+    const rangePx = CATCH_RANGE / MAP_W * mapRect.width;
+    coneEl.style.setProperty('--cone-range', rangePx + 'px');
+    coneEl.style.setProperty('--cone-half', (rangePx * 0.5) + 'px');
+  }
+  window.addEventListener('resize', refreshRect);
+
+  function toPx(unitX, unitY){
+    return { px: unitX / MAP_W * mapRect.width, py: unitY / MAP_H * mapRect.height };
+  }
+
+  let running = true;
+  let floorIndex = 0;
+  let carrying = false;
+  let suspicion = 0;
+  let timeLeft = mission.timeLimit;
+  let caught = false;
+  let stairsCooldown = 0;
+
+  const player = { x: 0, y: 0 };
+  let guard = null; // {x,y,wps,idx,speed,paused,pauseUntil,angle}
+
+  // --- Collisions murs : on lit le canal alpha des plans (transparent = hors de la maison) ---
+  const collisionCanvas = document.createElement('canvas');
+  const collisionCtx = collisionCanvas.getContext('2d', { willReadFrequently: true });
+  const collisionCache = {};
+  const COLLISION_RES = 300; // largeur de la grille de collision (résolution suffisante, coût unique par étage)
+
+  function loadCollision(idx){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const cw = COLLISION_RES, ch = Math.round(COLLISION_RES * MAP_H / MAP_W);
+        collisionCanvas.width = cw; collisionCanvas.height = ch;
+        collisionCtx.clearRect(0, 0, cw, ch);
+        collisionCtx.drawImage(img, 0, 0, cw, ch);
+        collisionCache[idx] = { data: collisionCtx.getImageData(0, 0, cw, ch).data, w: cw, h: ch };
+        resolve();
+      };
+      img.onerror = () => resolve();
+      img.src = mission.floors[idx].img;
+    });
+  }
+  mission.floors.forEach((f, i) => loadCollision(i));
+
+  const PLAYER_RADIUS = 15; // en unités carte, pour éviter que le joueur "colle" visuellement au mur
+  const COLLISION_PROBES = [[0,0],[PLAYER_RADIUS,0],[-PLAYER_RADIUS,0],[0,PLAYER_RADIUS],[0,-PLAYER_RADIUS]];
+  function isWalkable(xUnits, yUnits){
+    const c = collisionCache[floorIndex];
+    if (!c) return true; // pas encore chargé : on laisse passer plutôt que de bloquer injustement
+    for (const [ox, oy] of COLLISION_PROBES){
+      const px = Math.max(0, Math.min(c.w - 1, Math.floor((xUnits + ox) / MAP_W * c.w)));
+      const py = Math.max(0, Math.min(c.h - 1, Math.floor((yUnits + oy) / MAP_H * c.h)));
+      if (c.data[(py * c.w + px) * 4 + 3] <= 120) return false;
+    }
+    return true;
+  }
+
+  function setFloor(idx, arriveX, arriveY){
+    floorIndex = idx;
+    const floor = mission.floors[idx];
+    mapEl.style.backgroundImage = `url('${floor.img}')`;
+    floorLabel.textContent = floor.name;
+    player.x = arriveX;
+    player.y = arriveY;
+    stairsCooldown = 700;
+
+    if (floor.guard){
+      const wps = floor.guard.waypoints.map(w => ({ x: w.x / 100 * MAP_W, y: w.y / 100 * MAP_H }));
+      guard = {
+        x: wps[0].x, y: wps[0].y, wps, idx: 1,
+        speed: floor.guard.speed, paused: false, pauseUntil: 0, angle: 0
+      };
+      guardEl.style.display = '';
+      coneEl.style.display = '';
+    } else {
+      guard = null;
+      guardEl.style.display = 'none';
+      coneEl.style.display = 'none';
+    }
+  }
+
+  const startFloor = mission.floors[0];
+  setFloor(0, startFloor.entrance.x / 100 * MAP_W, startFloor.entrance.y / 100 * MAP_H);
+  refreshRect();
+
+  const keys = new Set();
+  function onKeyDown(e){
+    const k = e.key.toLowerCase();
+    if (['arrowup','arrowdown','arrowleft','arrowright',' ','z','q','s','d','e'].includes(k)) e.preventDefault();
+    keys.add(k);
+    if (k === 'e') tryInteract();
+  }
+  function onKeyUp(e){ keys.delete(e.key.toLowerCase()); }
+  document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keyup', onKeyUp);
+
+  let nearSafe = false;
+  let nearExit = false;
+
+  function tryInteract(){
+    if (nearSafe && !carrying){
+      carrying = true;
+      playerEl.classList.add('carrying');
+      subEl.textContent = "Objet récupéré. Redescendez et rejoignez la sortie sans vous faire repérer.";
+      statusText.textContent = '';
+    }
+  }
+
+  function dist(ax,ay,bx,by){ return Math.hypot(ax-bx, ay-by); }
+
+  let lastTime = null;
+  function tick(now){
+    if (!running) return;
+    if (lastTime === null) lastTime = now;
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+
+    // Temps global
+    timeLeft -= dt;
+    if (timeLeft <= 0){
+      timeLeft = 0;
+      endInfiltration(false, "Le temps imparti est écoulé.");
+      return;
+    }
+    const pct = Math.max(0, timeLeft / mission.timeLimit * 100);
+    timebar.style.width = pct + '%';
+    timebar.style.background = pct < 25 ? 'var(--red)' : (pct < 55 ? 'var(--amber)' : 'var(--cyan)');
+
+    if (stairsCooldown > 0) stairsCooldown -= dt * 1000;
+
+    // Déplacement joueur
+    let dx = 0, dy = 0;
+    if (keys.has('arrowup') || keys.has('z')) dy -= 1;
+    if (keys.has('arrowdown') || keys.has('s')) dy += 1;
+    if (keys.has('arrowleft') || keys.has('q')) dx -= 1;
+    if (keys.has('arrowright') || keys.has('d')) dx += 1;
+    if (dx !== 0 || dy !== 0){
+      const len = Math.hypot(dx, dy);
+      const nx = Math.max(6, Math.min(MAP_W - 6, player.x + (dx / len) * PLAYER_SPEED * dt));
+      const ny = Math.max(6, Math.min(MAP_H - 6, player.y + (dy / len) * PLAYER_SPEED * dt));
+      if (isWalkable(nx, player.y)) player.x = nx;
+      if (isWalkable(player.x, ny)) player.y = ny;
+    }
+
+    const floor = mission.floors[floorIndex];
+
+    // Escaliers
+    if (stairsCooldown <= 0){
+      for (const s of floor.stairs){
+        const sx = s.x / 100 * MAP_W, sy = s.y / 100 * MAP_H;
+        if (dist(player.x, player.y, sx, sy) < TRIGGER_RADIUS){
+          setFloor(s.to, sx, sy);
+          break;
+        }
+      }
+    }
+
+    // Coffre
+    nearSafe = false;
+    if (floor.safe && !carrying){
+      const dSafe = dist(player.x, player.y, floor.safe.x / 100 * MAP_W, floor.safe.y / 100 * MAP_H);
+      nearSafe = dSafe < TRIGGER_RADIUS;
+    }
+
+    // Sortie
+    nearExit = false;
+    if (floor.entrance){
+      const dExit = dist(player.x, player.y, floor.entrance.x / 100 * MAP_W, floor.entrance.y / 100 * MAP_H);
+      nearExit = dExit < TRIGGER_RADIUS;
+      if (nearExit && carrying){
+        endInfiltration(true);
+        return;
+      }
+    }
+
+    if (nearSafe){
+      promptEl.hidden = false;
+      promptEl.textContent = "Appuyez sur E pour ouvrir le coffre";
+    } else if (nearExit && !carrying){
+      promptEl.hidden = false;
+      promptEl.textContent = "Récupérez d'abord l'objet avant de sortir";
+    } else {
+      promptEl.hidden = true;
+    }
+
+    // Garde
+    let spotted = false;
+    if (guard){
+      if (guard.paused){
+        if (now >= guard.pauseUntil) guard.paused = false;
+      } else {
+        const target = guard.wps[guard.idx];
+        const gdx = target.x - guard.x, gdy = target.y - guard.y;
+        const gdist = Math.hypot(gdx, gdy);
+        if (gdist < 4){
+          guard.idx = (guard.idx + 1) % guard.wps.length;
+          guard.paused = true;
+          const cfgFloor = mission.floors[floorIndex].guard;
+          guard.pauseUntil = now + cfgFloor.pauseMin + Math.random() * (cfgFloor.pauseMax - cfgFloor.pauseMin);
+        } else {
+          guard.angle = Math.atan2(gdx, gdy) * 180 / Math.PI;
+          guard.x += (gdx / gdist) * guard.speed * dt;
+          guard.y += (gdy / gdist) * guard.speed * dt;
+        }
+      }
+
+      const vx = player.x - guard.x, vy = player.y - guard.y;
+      const pdist = Math.hypot(vx, vy);
+      if (pdist < CATCH_RANGE){
+        const angleToPlayer = Math.atan2(vx, vy) * 180 / Math.PI;
+        let diff = Math.abs(angleToPlayer - guard.angle);
+        if (diff > 180) diff = 360 - diff;
+        if (diff < CATCH_HALF_ANGLE) spotted = true;
+      }
+
+      const gp = toPx(guard.x, guard.y);
+      guardEl.style.transform = `translate(${gp.px}px, ${gp.py}px)`;
+      coneEl.style.transform = `translate(${gp.px}px, ${gp.py}px) rotate(${guard.angle}deg)`;
+      coneEl.classList.toggle('alert', spotted);
+    }
+
+    if (spotted){
+      suspicion = Math.min(100, suspicion + SUSPICION_RATE * dt);
+      statusText.textContent = 'Repéré !';
+    } else {
+      suspicion = Math.max(0, suspicion - SUSPICION_DECAY * dt);
+      if (statusText.textContent === 'Repéré !') statusText.textContent = '';
+    }
+    const sFill = document.getElementById('suspicion-fill');
+    sFill.style.width = suspicion + '%';
+    sFill.style.background = suspicion > 66 ? 'var(--red)' : (suspicion > 33 ? 'var(--amber)' : 'var(--green)');
+    gamePanel.classList.toggle('critical', suspicion > 75);
+
+    if (suspicion >= 100 && !caught){
+      caught = true;
+      flashEl.classList.add('show');
+      endInfiltration(false, "Un garde vous a repéré.");
+      return;
+    }
+
+    const pp = toPx(player.x, player.y);
+    playerEl.style.transform = `translate(${pp.px}px, ${pp.py}px)`;
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  activeCleanup = function(){
+    running = false;
+    document.removeEventListener('keydown', onKeyDown);
+    document.removeEventListener('keyup', onKeyUp);
+    window.removeEventListener('resize', refreshRect);
+    activeCleanup = null;
+  };
+
+  function endInfiltration(won, reason){
+    activeCleanup = null;
+    running = false;
+    document.removeEventListener('keydown', onKeyDown);
+    document.removeEventListener('keyup', onKeyUp);
+    window.removeEventListener('resize', refreshRect);
+    gamePanel.classList.remove('critical');
+    if (won) addBalance(mission.reward);
+    gamePanel.dataset.locked = 'false';
+    gamePanel.innerHTML = `
+      <div class="result-icon ${won ? 'win' : 'lose'}">${won ? 'CONTRAT REMPLI' : 'ECHEC'}</div>
+      ${won
+        ? `<div class="result-amount">+ $${mission.reward}</div>
+           <p class="result-text">L'objet a été récupéré et ramené à la sortie sans alerter personne.</p>`
+        : `<p class="result-text">${reason || "La mission a échoué."}</p>`
+      }
+      <button class="btn btn-accept" id="close-result-infil" style="background:var(--line-strong);border-color:var(--line-strong);color:var(--text-primary)">Fermer</button>
+    `;
+    document.getElementById('close-result-infil').addEventListener('click', () => {
+      closeGameOverlay();
+    });
+  }
+}
+
 /* --- Boîtier 1 : câbles colorés (Simon des couleurs) --- */
 function renderColorStage(container, subEl, panelConfig, isRunning, onSuccess, onMistake){
   const COLORS = [
@@ -1064,7 +1481,7 @@ function renderColorStage(container, subEl, panelConfig, isRunning, onSuccess, o
 
   container.innerHTML = `
     <div class="color-sequence" id="color-sequence"></div>
-    <div class="panel-box" id="color-box" style="background-image:url('boitier-couleur.png')"></div>
+    <div class="panel-box" id="color-box" style="background-image:url('img-missions/boitier-couleur.png')"></div>
   `;
 
   const seqEl = document.getElementById('color-sequence');
@@ -1161,7 +1578,7 @@ function renderBinaryStage(container, subEl, panelConfig, isRunning, onSuccess, 
   subEl.textContent = 'Reproduisez le code binaire affiché avec les interrupteurs';
 
   container.innerHTML = `
-    <div class="panel-box" id="binary-box" style="background-image:url('boitier-binaire.png')">
+    <div class="panel-box" id="binary-box" style="background-image:url('img-missions/boitier-binaire.png')">
       <div class="binary-screen" id="binary-screen" style="left:25.7%; top:22.4%; width:47.5%; height:26%;"></div>
     </div>
     <button class="btn-lockpick" id="binary-validate" style="margin-top:14px;">Valider</button>
@@ -1231,7 +1648,7 @@ function renderCodeStage(container, subEl, panelConfig, isRunning, onSuccess, on
   ];
 
   container.innerHTML = `
-    <div class="panel-box" id="code-box" style="background-image:url('boitier-code.png')">
+    <div class="panel-box" id="code-box" style="background-image:url('img-missions/boitier-code.png')">
       <div class="code-screen" id="code-screen" style="left:23.8%; top:20.2%; width:52.4%; height:13.1%;">
         <span class="code-screen-text" id="code-screen-text"></span>
       </div>
